@@ -29,10 +29,8 @@
     .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
     .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
     .checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px}
-    .mini-checks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-    @media (max-width:1000px){.mini-checks{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:900px){.checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media (max-width:700px){.form-grid,.row,.checks,.mini-checks{grid-template-columns:1fr}}
+    @media (max-width:700px){.form-grid,.row,.checks{grid-template-columns:1fr}}
     label{display:block;font-weight:700;margin-bottom:6px}
     input[type="text"],input[type="date"],input[type="number"],textarea,select{
       width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;min-height:44px
@@ -71,10 +69,6 @@
     .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#f3f4f6;font-size:12px;font-weight:700;margin:0 6px 6px 0}
     .doctor-summary{white-space:pre-wrap}
     .mobile-note{font-size:12px;color:var(--muted);margin-top:6px}
-    .quick-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-    .quick-btn{padding:10px 8px;border-radius:10px;border:1px solid var(--line);background:#fff;text-align:center;font-weight:700;cursor:pointer}
-    .quick-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-    @media (max-width:700px){.quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media print{
       body{background:#fff}
       .topbar,.tabs,#diaryTab,#trendsTab .chart-grid,.sidebar,.mobile-note,.report-actions .no-print{display:none !important}
@@ -117,33 +111,33 @@
               <div><label for="date">Date</label><input type="date" id="date" /></div>
               <div><label for="day">Day</label><input type="text" id="day" placeholder="e.g. Monday" /></div>
               <div><label for="sleepHours">Sleep last night (hours)</label><select id="sleepHours"><option value="">Select</option><option>Less than 4</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10+</option></select></div>
-              <div><label for="sleepQuality">Sleep quality (1–5)</label><select id="sleepQuality"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+              <div><label for="sleepQuality">Sleep quality (1–5)</label><select id="sleepQuality"><option value="">Select</option><option>1 – very poor</option><option>2 – poor</option><option>3 – average</option><option>4 – good</option><option>5 – very good</option></select></div>
             </div>
           </section>
 
           <section class="card">
             <h2>2. How I feel today</h2>
             <div class="row">
-              <div><label for="overallWellness">Overall wellness (1–10)</label><select id="overallWellness"></select></div>
-              <div><label for="energy">Energy (1–10)</label><select id="energy"></select></div>
-              <div><label for="mood">Mood / irritability (1–10)</label><select id="mood"></select></div>
+              <div><label for="overallWellness">Overall wellness (0–10)</label><select id="overallWellness"></select></div>
+              <div><label for="energy">Energy (0–10)</label><select id="energy"></select></div>
+              <div><label for="mood">Mood / irritability (0–10)</label><select id="mood"></select></div>
             </div>
             <div class="row" style="margin-top:12px;">
-              <div><label for="stress">Stress level (1–10)</label><select id="stress"></select></div>
+              <div><label for="stress">Stress level (0–10)</label><select id="stress"></select></div>
               <div><label for="flareDay">Was today a flare day?</label><select id="flareDay"><option value="">Select</option><option>No</option><option>Mild</option><option>Moderate</option><option>Severe</option></select></div>
               <div><label for="flareLength">Current flare length</label><select id="flareLength"><option value="">Select</option><option>Less than 12 hours</option><option>12–24 hours</option><option>24–48 hours</option><option>48+ hours</option></select></div>
             </div>
 
-            <h3>Main symptoms (0–10)</h3>
+            <h3>Main symptoms</h3>
             <div class="row">
-              <div><label for="gutTenderness">Gut tenderness / soreness</label><select id="gutTenderness"></select></div>
-              <div><label for="bloating">Bloating</label><select id="bloating"></select></div>
-              <div><label for="headache">Headache</label><select id="headache"></select></div>
+              <div><label for="gutTenderness">Gut tenderness / soreness (0–10)</label><select id="gutTenderness"></select></div>
+              <div><label for="bloating">Bloating (0–10)</label><select id="bloating"></select></div>
+              <div><label for="headache">Headache (0–10)</label><select id="headache"></select></div>
             </div>
             <div class="row" style="margin-top:12px;">
-              <div><label for="jointPain">Joint pain</label><select id="jointPain"></select></div>
-              <div><label for="fatigue">Fatigue / tiredness</label><select id="fatigue"></select></div>
-              <div><label for="fluLike">Flu-like feeling</label><select id="fluLike"></select></div>
+              <div><label for="jointPain">Joint pain (0–10)</label><select id="jointPain"></select></div>
+              <div><label for="fatigue">Fatigue / tiredness (0–10)</label><select id="fatigue"></select></div>
+              <div><label for="fluLike">Flu-like feeling (0–10)</label><select id="fluLike"></select></div>
             </div>
 
             <h3>Other symptoms</h3>
@@ -184,7 +178,7 @@
 
             <div class="row" style="margin-top:14px;">
               <div><label for="bowelCount">Number of bowel motions</label><select id="bowelCount"><option value="">Select</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4+</option></select></div>
-              <div><label for="stoolType">Stool type (1–7)</label><select id="stoolType"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></div>
+              <div><label for="stoolType">Stool type (1–7)</label><select id="stoolType"><option value="">Select</option><option>1 – very hard / constipated</option><option>2 – hard and lumpy</option><option>3 – formed with cracks</option><option>4 – smooth and normal</option><option>5 – soft blobs</option><option>6 – mushy / loose</option><option>7 – watery / runny</option></select></div>
               <div><label for="gutNotes">Gut notes</label><select id="gutNotes"><option value="">Select</option><option>Normal for me</option><option>Slightly worse than usual</option><option>Clearly worse than usual</option><option>Better than usual</option></select></div>
             </div>
 
@@ -363,7 +357,7 @@
   </div>
 
 <script>
-const STORAGE_KEY = "healthDiaryEntries_v4";
+const STORAGE_KEY = "healthDiaryEntries_v5";
 const numericSelectIds = ["overallWellness","energy","mood","stress","gutTenderness","bloating","headache","jointPain","fatigue","fluLike"];
 const fieldIds = ["date","day","sleepHours","sleepQuality","overallWellness","energy","mood","stress","flareDay","flareLength","gutTenderness","bloating","headache","jointPain","fatigue","fluLike","bowelCount","stoolType","gutNotes","mealPattern","caffeine","alcohol","water","exerciseIntensity","stressors","dayRating","triggerGuess","doctorNotes"];
 const checkboxGroups = {
@@ -380,18 +374,68 @@ const checkboxGroups = {
 const flareMap = {"":0,"No":0,"Mild":1,"Moderate":2,"Severe":3};
 const chartColors = ["#1d4ed8","#059669","#b45309","#7c3aed","#dc2626"];
 
+function scoreLabel(i){
+  if(i === 0) return "0 – none";
+  if(i <= 2) return `${i} – very mild`;
+  if(i <= 4) return `${i} – mild`;
+  if(i <= 6) return `${i} – moderate`;
+  if(i <= 8) return `${i} – high`;
+  return `${i} – severe`;
+}
+function moodLabel(i){
+  if(i === 0) return "0 – very calm / good";
+  if(i <= 2) return `${i} – low irritability`;
+  if(i <= 4) return `${i} – mildly irritable`;
+  if(i <= 6) return `${i} – moderate irritability`;
+  if(i <= 8) return `${i} – high irritability`;
+  return `${i} – extreme irritability`;
+}
+function energyLabel(i){
+  if(i === 0) return "0 – completely drained";
+  if(i <= 2) return `${i} – very low`;
+  if(i <= 4) return `${i} – low`;
+  if(i <= 6) return `${i} – moderate`;
+  if(i <= 8) return `${i} – good`;
+  return `${i} – excellent`;
+}
+function wellnessLabel(i){
+  if(i === 0) return "0 – very unwell";
+  if(i <= 2) return `${i} – poor`;
+  if(i <= 4) return `${i} – below average`;
+  if(i <= 6) return `${i} – average`;
+  if(i <= 8) return `${i} – good`;
+  return `${i} – excellent`;
+}
+function stressLabel(i){
+  if(i === 0) return "0 – no stress";
+  if(i <= 2) return `${i} – low`;
+  if(i <= 4) return `${i} – mild`;
+  if(i <= 6) return `${i} – moderate`;
+  if(i <= 8) return `${i} – high`;
+  return `${i} – extreme`;
+}
 function fillNumericSelects(){
   numericSelectIds.forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
-    sel.innerHTML = '<option value="">Select</option>' + Array.from({length:11}, (_,i)=>`<option>${i}</option>`).join("");
+    let optionHtml = '<option value="">Select</option>';
+    for(let i=0;i<=10;i++){
+      let label;
+      if(id === "mood") label = moodLabel(i);
+      else if(id === "energy") label = energyLabel(i);
+      else if(id === "overallWellness") label = wellnessLabel(i);
+      else if(id === "stress") label = stressLabel(i);
+      else label = scoreLabel(i);
+      optionHtml += `<option>${label}</option>`;
+    }
+    sel.innerHTML = optionHtml;
   });
 }
 function getEntries(){
   try{
     const current = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if(Array.isArray(current)) return current;
-    const oldKeys = ["healthDiaryEntries_v3","healthDiaryEntries_v2","healthDiaryEntries_v1"];
+    const oldKeys = ["healthDiaryEntries_v4","healthDiaryEntries_v3","healthDiaryEntries_v2","healthDiaryEntries_v1"];
     for (const key of oldKeys){
       const data = JSON.parse(localStorage.getItem(key));
       if(Array.isArray(data)) return data;
@@ -427,6 +471,11 @@ function clearForm(resetDate=true){
     document.getElementById("day").value = dayNameFromDate(todayISO());
   }
 }
+function parseLeadingNumber(v){
+  if(typeof v !== "string") return Number(v);
+  const m = v.match(/^(\d+)/);
+  return m ? Number(m[1]) : Number(v);
+}
 function saveEntry(){
   const data = collectForm();
   if(!data.date){ alert("Please enter a date."); return; }
@@ -454,9 +503,9 @@ function renderEntries(){
     const symptomPills = [];
     if(entry.flareDay) symptomPills.push(`<span class="pill">${entry.flareDay} flare</span>`);
     [["Bloating",entry.bloating],["Fatigue",entry.fatigue],["Joint pain",entry.jointPain],["Flu-like",entry.fluLike]].forEach(([name,val]) => {
-      const num = Number(val); if(!isNaN(num) && num >= 5) symptomPills.push(`<span class="pill">${name}: ${num}</span>`);
+      const num = parseLeadingNumber(val); if(!isNaN(num) && num >= 5) symptomPills.push(`<span class="pill">${name}: ${num}</span>`);
     });
-    div.innerHTML = `<strong>${entry.date}${entry.day ? " • " + entry.day : ""}</strong><div class="meta">Wellness: ${entry.overallWellness || "-"} / 10 • Energy: ${entry.energy || "-"} • Stress: ${entry.stress || "-"}</div><div>${symptomPills.join("") || '<span class="muted">No high symptom markers recorded</span>'}</div><div class="entry-actions"><button data-load="${entry.date}">Open</button><button data-delete="${entry.date}">Delete</button></div>`;
+    div.innerHTML = `<strong>${entry.date}${entry.day ? " • " + entry.day : ""}</strong><div class="meta">Wellness: ${entry.overallWellness || "-"} • Energy: ${entry.energy || "-"} • Stress: ${entry.stress || "-"}</div><div>${symptomPills.join("") || '<span class="muted">No high symptom markers recorded</span>'}</div><div class="entry-actions"><button data-load="${entry.date}">Open</button><button data-delete="${entry.date}">Delete</button></div>`;
     list.appendChild(div);
   });
   list.querySelectorAll("[data-load]").forEach(btn => btn.addEventListener("click", () => {
@@ -486,7 +535,7 @@ function updateSummary(){
   const entries = getEntries();
   const target = document.getElementById("summaryContent");
   if(entries.length === 0){ target.textContent = "No entries yet."; return; }
-  const nums = f => entries.map(e => Number(e[f])).filter(v => !isNaN(v));
+  const nums = f => entries.map(e => parseLeadingNumber(e[f])).filter(v => !isNaN(v));
   const flareCount = entries.filter(e => e.flareDay && e.flareDay !== "No").length;
   const links = topCounts(entries.flatMap(e => [...(e.triggerFoods || []), ...(e.beforeSymptoms || [])]), 3);
   target.innerHTML = `Entries saved: <strong>${entries.length}</strong><br>Average bloating: <strong>${format1(average(nums("bloating")))}</strong><br>Average fatigue: <strong>${format1(average(nums("fatigue")))}</strong><br>Average joint pain: <strong>${format1(average(nums("jointPain")))}</strong><br>Flare days logged: <strong>${flareCount}</strong><br>Most repeated possible links: <strong>${links.length ? links.map(t => `${t[0]} (${t[1]})`).join(", ") : "Not enough data yet"}</strong>`;
@@ -578,7 +627,7 @@ function buildInsights(entries){
   if(entries.length < 4){ return ["Log at least 4 days before expecting meaningful patterns."]; }
   const avg = (field, filterFn=null) => {
     const source = filterFn ? entries.filter(filterFn) : entries;
-    const vals = source.map(e => Number(e[field])).filter(v => !isNaN(v));
+    const vals = source.map(e => parseLeadingNumber(e[field])).filter(v => !isNaN(v));
     return vals.length ? average(vals) : null;
   };
   const flareDays = entries.filter(e => (flareMap[e.flareDay || ""] || 0) > 0);
@@ -601,22 +650,22 @@ function buildInsights(entries){
 function renderDashboard(){
   const entries = latestEntries(14), labels = entries.map(e => e.date);
   drawLineChart("symptomChart", labels, [
-    {name:"Gut", values: entries.map(e => Number(e.gutTenderness) || 0)},
-    {name:"Bloating", values: entries.map(e => Number(e.bloating) || 0)},
-    {name:"Fatigue", values: entries.map(e => Number(e.fatigue) || 0)},
-    {name:"Joint", values: entries.map(e => Number(e.jointPain) || 0)},
-    {name:"Flu-like", values: entries.map(e => Number(e.fluLike) || 0)}
+    {name:"Gut", values: entries.map(e => parseLeadingNumber(e.gutTenderness)).map(v => isNaN(v) ? 0 : v)},
+    {name:"Bloating", values: entries.map(e => parseLeadingNumber(e.bloating)).map(v => isNaN(v) ? 0 : v)},
+    {name:"Fatigue", values: entries.map(e => parseLeadingNumber(e.fatigue)).map(v => isNaN(v) ? 0 : v)},
+    {name:"Joint", values: entries.map(e => parseLeadingNumber(e.jointPain)).map(v => isNaN(v) ? 0 : v)},
+    {name:"Flu-like", values: entries.map(e => parseLeadingNumber(e.fluLike)).map(v => isNaN(v) ? 0 : v)}
   ]);
   drawLineChart("sleepStressChart", labels, [
     {name:"Sleep hrs", values: entries.map(e => { const v = parseSleepValue(e.sleepHours); return v === null ? null : Math.min(v,10); })},
-    {name:"Stress", values: entries.map(e => Number(e.stress) || 0)}
+    {name:"Stress", values: entries.map(e => parseLeadingNumber(e.stress)).map(v => isNaN(v) ? 0 : v)}
   ]);
   drawBarChart("flareChart", labels, entries.map(e => flareMap[e.flareDay || ""] || 0));
   const all = getEntries();
   document.getElementById("kpiEntries").textContent = all.length;
   document.getElementById("kpiFlareDays").textContent = all.filter(e => (flareMap[e.flareDay || ""] || 0) > 0).length;
   const sleepVals = all.map(e => parseSleepValue(e.sleepHours)).filter(v => v !== null);
-  const stressVals = all.map(e => Number(e.stress)).filter(v => !isNaN(v));
+  const stressVals = all.map(e => parseLeadingNumber(e.stress)).filter(v => !isNaN(v));
   document.getElementById("kpiSleep").textContent = sleepVals.length ? format1(average(sleepVals)) + " hrs" : "-";
   document.getElementById("kpiStress").textContent = stressVals.length ? format1(average(stressVals)) : "-";
   const insightList = document.getElementById("insightList");
@@ -626,7 +675,7 @@ function renderDashboard(){
 function symptomAverages(entries){
   const defs = [["Gut tenderness","gutTenderness"],["Bloating","bloating"],["Headache","headache"],["Joint pain","jointPain"],["Fatigue","fatigue"],["Flu-like","fluLike"]];
   return defs.map(([name,key]) => {
-    const vals = entries.map(e => Number(e[key])).filter(v => !isNaN(v));
+    const vals = entries.map(e => parseLeadingNumber(e[key])).filter(v => !isNaN(v));
     return {name, avg: average(vals)};
   }).filter(x => x.avg !== null).sort((a,b)=>b.avg-a.avg);
 }
@@ -649,7 +698,7 @@ function renderDoctorReport(){
   const last = entries[entries.length - 1].date;
   const flareDays = entries.filter(e => (flareMap[e.flareDay || ""] || 0) > 0).length;
   const avgSleep = average(entries.map(e => parseSleepValue(e.sleepHours)).filter(v => v !== null));
-  const avgStress = average(entries.map(e => Number(e.stress)).filter(v => !isNaN(v)));
+  const avgStress = average(entries.map(e => parseLeadingNumber(e.stress)).filter(v => !isNaN(v)));
   overview.innerHTML = `<div><strong>Date range:</strong> ${first} to ${last}</div><div><strong>Total entries:</strong> ${entries.length}</div><div><strong>Flare days:</strong> ${flareDays}</div><div><strong>Average sleep:</strong> ${format1(avgSleep)} hrs</div><div><strong>Average stress:</strong> ${format1(avgStress)} / 10</div>`;
   const symptomList = symptomAverages(entries).slice(0,6);
   symptoms.innerHTML = symptomList.length ? symptomList.map(s => `<div class="badge">${s.name}: ${format1(s.avg)}/10</div>`).join("") : "<span class='muted'>No symptom scores recorded.</span>";
