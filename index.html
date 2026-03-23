@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Health & Lifestyle Diary</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280; --line:#d1d5db;
+      --accent:#1d4ed8; --accent-soft:#dbeafe; --danger:#991b1b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
+    .wrap{max-width:1280px;margin:0 auto;padding:16px}
+    .topbar{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+    h1{margin:0 0 6px 0;font-size:clamp(24px,4vw,30px)}
+    .sub{color:var(--muted);max-width:860px}
+    .toolbar,.tabs,.entry-actions,.report-actions{display:flex;gap:8px;flex-wrap:wrap}
+    button,.filelabel{
+      border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700;
+      min-height:42px;font-size:14px
+    }
+    button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px}
+    @media (max-width:980px){.layout{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+    h2{margin:0 0 14px 0;font-size:22px;border-bottom:1px solid #eef2f7;padding-bottom:8px}
+    h3{margin:16px 0 10px 0;font-size:17px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 12px}
+    .mini-checks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+    @media (max-width:1000px){.mini-checks{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width:900px){.checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:700px){.form-grid,.row,.checks,.mini-checks{grid-template-columns:1fr}}
+    label{display:block;font-weight:700;margin-bottom:6px}
+    input[type="text"],input[type="date"],input[type="number"],textarea,select{
+      width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;min-height:44px
+    }
+    textarea{min-height:96px;resize:vertical}
+    .check-item{display:flex;gap:8px;align-items:flex-start;font-weight:400}
+    .check-item input{margin-top:4px;min-height:auto;width:auto}
+    .muted{color:var(--muted)}
+    .sidebar .card{position:sticky;top:12px}
+    @media (max-width:980px){.sidebar .card{position:static}}
+    .entry-list{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;padding-right:4px}
+    .entry{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfdff}
+    .entry strong{display:block}
+    .entry .meta{font-size:13px;color:var(--muted);margin:4px 0 8px}
+    .summary-box{background:var(--accent-soft);border:1px solid #bfdbfe;border-radius:12px;padding:12px;margin-top:12px}
+    .footer-note{font-size:13px;color:var(--muted);margin-top:8px}
+    .hidden{display:none !important}
+    .pill{display:inline-block;background:#eef2ff;color:#3730a3;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700;margin-right:6px;margin-top:4px}
+    .tabs{margin-bottom:12px}
+    .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .section.hidden{display:none}
+    .kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+    .kpi .value{font-size:22px;font-weight:700;margin-top:4px}
+    .chart-grid{display:grid;grid-template-columns:1fr;gap:14px}
+    .chart-card{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+    canvas{width:100%;height:220px;display:block}
+    .legend{font-size:12px;color:var(--muted);margin-top:6px}
+    .insight-list{margin:0;padding-left:18px}
+    .insight-list li{margin-bottom:8px}
+    .danger{color:var(--danger);font-weight:700}
+    .report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media (max-width:800px){.report-grid{grid-template-columns:1fr}}
+    .report-box{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+    .report-box h3{margin-top:0}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#f3f4f6;font-size:12px;font-weight:700;margin:0 6px 6px 0}
+    .doctor-summary{white-space:pre-wrap}
+    .mobile-note{font-size:12px;color:var(--muted);margin-top:6px}
+    .quick-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+    .quick-btn{padding:10px 8px;border-radius:10px;border:1px solid var(--line);background:#fff;text-align:center;font-weight:700;cursor:pointer}
+    .quick-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    @media (max-width:700px){.quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media print{
+      body{background:#fff}
+      .topbar,.tabs,#diaryTab,#trendsTab .chart-grid,.sidebar,.mobile-note,.report-actions .no-print{display:none !important}
+      .wrap{max-width:none;padding:0}
+      #reportTab{display:block !important}
+      .card,.report-box{box-shadow:none;border:1px solid #ccc}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Daily Health & Lifestyle Diary</h1>
+        <div class="sub">Faster mobile diary with more dropdowns and tick boxes, fewer typing fields, plus trends and a doctor summary.</div>
+      </div>
+      <div class="toolbar">
+        <button class="primary" id="saveBtn">Save entry</button>
+        <button id="newBtn">New blank day</button>
+        <button id="exportBtn">Export JSON</button>
+        <button id="csvBtn">Export CSV</button>
+        <button id="printBtn">Print / Save PDF</button>
+        <label class="filelabel" for="importFile">Import JSON</label>
+        <input id="importFile" type="file" accept=".json" class="hidden" />
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="diaryTab">Diary</button>
+      <button class="tab-btn" data-tab="trendsTab">Trends dashboard</button>
+      <button class="tab-btn" data-tab="reportTab">Doctor summary</button>
+    </div>
+
+    <section id="diaryTab" class="section">
+      <div class="layout">
+        <main>
+          <section class="card">
+            <h2>1. Basic details</h2>
+            <div class="form-grid">
+              <div><label for="date">Date</label><input type="date" id="date" /></div>
+              <div><label for="day">Day</label><input type="text" id="day" placeholder="e.g. Monday" /></div>
+              <div><label for="sleepHours">Sleep last night (hours)</label><select id="sleepHours"><option value="">Select</option><option>Less than 4</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10+</option></select></div>
+              <div><label for="sleepQuality">Sleep quality (1–5)</label><select id="sleepQuality"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>2. How I feel today</h2>
+            <div class="row">
+              <div><label for="overallWellness">Overall wellness (1–10)</label><select id="overallWellness"></select></div>
+              <div><label for="energy">Energy (1–10)</label><select id="energy"></select></div>
+              <div><label for="mood">Mood / irritability (1–10)</label><select id="mood"></select></div>
+            </div>
+            <div class="row" style="margin-top:12px;">
+              <div><label for="stress">Stress level (1–10)</label><select id="stress"></select></div>
+              <div><label for="flareDay">Was today a flare day?</label><select id="flareDay"><option value="">Select</option><option>No</option><option>Mild</option><option>Moderate</option><option>Severe</option></select></div>
+              <div><label for="flareLength">Current flare length</label><select id="flareLength"><option value="">Select</option><option>Less than 12 hours</option><option>12–24 hours</option><option>24–48 hours</option><option>48+ hours</option></select></div>
+            </div>
+
+            <h3>Main symptoms (0–10)</h3>
+            <div class="row">
+              <div><label for="gutTenderness">Gut tenderness / soreness</label><select id="gutTenderness"></select></div>
+              <div><label for="bloating">Bloating</label><select id="bloating"></select></div>
+              <div><label for="headache">Headache</label><select id="headache"></select></div>
+            </div>
+            <div class="row" style="margin-top:12px;">
+              <div><label for="jointPain">Joint pain</label><select id="jointPain"></select></div>
+              <div><label for="fatigue">Fatigue / tiredness</label><select id="fatigue"></select></div>
+              <div><label for="fluLike">Flu-like feeling</label><select id="fluLike"></select></div>
+            </div>
+
+            <h3>Other symptoms</h3>
+            <div class="checks" id="otherSymptomsChecks">
+              <label class="check-item"><input type="checkbox" value="Nausea" />Nausea</label>
+              <label class="check-item"><input type="checkbox" value="Burping" />Burping</label>
+              <label class="check-item"><input type="checkbox" value="Reflux" />Reflux</label>
+              <label class="check-item"><input type="checkbox" value="Poor appetite" />Poor appetite</label>
+              <label class="check-item"><input type="checkbox" value="Brain fog" />Brain fog</label>
+              <label class="check-item"><input type="checkbox" value="Body aches" />Body aches</label>
+              <label class="check-item"><input type="checkbox" value="Chills" />Chills</label>
+              <label class="check-item"><input type="checkbox" value="Feeling flat" />Feeling flat</label>
+              <label class="check-item"><input type="checkbox" value="No extra symptoms" />No extra symptoms</label>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>3. Gut details</h2>
+            <h3>Where is the discomfort?</h3>
+            <div class="checks" id="discomfortLocation">
+              <label class="check-item"><input type="checkbox" value="Upper stomach" />Upper stomach</label>
+              <label class="check-item"><input type="checkbox" value="Middle abdomen" />Middle abdomen</label>
+              <label class="check-item"><input type="checkbox" value="Lower abdomen" />Lower abdomen</label>
+              <label class="check-item"><input type="checkbox" value="Left side" />Left side</label>
+              <label class="check-item"><input type="checkbox" value="Right side" />Right side</label>
+              <label class="check-item"><input type="checkbox" value="General/all over" />General / all over</label>
+            </div>
+
+            <h3>What does it feel like?</h3>
+            <div class="checks" id="discomfortType">
+              <label class="check-item"><input type="checkbox" value="Tender" />Tender</label>
+              <label class="check-item"><input type="checkbox" value="Sore" />Sore</label>
+              <label class="check-item"><input type="checkbox" value="Cramping" />Cramping</label>
+              <label class="check-item"><input type="checkbox" value="Burning" />Burning</label>
+              <label class="check-item"><input type="checkbox" value="Full/heavy" />Full / heavy</label>
+              <label class="check-item"><input type="checkbox" value="Bloated" />Bloated</label>
+            </div>
+
+            <div class="row" style="margin-top:14px;">
+              <div><label for="bowelCount">Number of bowel motions</label><select id="bowelCount"><option value="">Select</option><option>0</option><option>1</option><option>2</option><option>3</option><option>4+</option></select></div>
+              <div><label for="stoolType">Stool type (1–7)</label><select id="stoolType"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></div>
+              <div><label for="gutNotes">Gut notes</label><select id="gutNotes"><option value="">Select</option><option>Normal for me</option><option>Slightly worse than usual</option><option>Clearly worse than usual</option><option>Better than usual</option></select></div>
+            </div>
+
+            <h3>Any of these?</h3>
+            <div class="checks" id="bowelFlags">
+              <label class="check-item"><input type="checkbox" value="Urgency" />Urgency</label>
+              <label class="check-item"><input type="checkbox" value="Constipation" />Constipation</label>
+              <label class="check-item"><input type="checkbox" value="Diarrhoea" />Diarrhoea</label>
+              <label class="check-item"><input type="checkbox" value="Mucus" />Mucus</label>
+              <label class="check-item"><input type="checkbox" value="Blood" />Blood</label>
+              <label class="check-item"><input type="checkbox" value="Black stools" />Black stools</label>
+              <label class="check-item"><input type="checkbox" value="Pain with bowel motion" />Pain with bowel motion</label>
+              <label class="check-item"><input type="checkbox" value="None of these" />None of these</label>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>4. Food and drink</h2>
+            <div class="form-grid">
+              <div><label for="mealPattern">Main meal pattern</label><select id="mealPattern"><option value="">Select</option><option>Normal eating</option><option>Ate less than usual</option><option>Ate more than usual</option><option>Skipped meals</option><option>Ate late</option></select></div>
+              <div><label for="water">Water intake</label><select id="water"><option value="">Select</option><option>Very low</option><option>Low</option><option>Moderate</option><option>Good</option><option>High</option></select></div>
+              <div><label for="caffeine">Caffeine</label><select id="caffeine"><option value="">Select</option><option>None</option><option>1</option><option>2</option><option>3</option><option>4+</option></select></div>
+              <div><label for="alcohol">Alcohol</label><select id="alcohol"><option value="">Select</option><option>None</option><option>1 drink</option><option>2 drinks</option><option>3+ drinks</option></select></div>
+            </div>
+
+            <h3>Possible trigger foods</h3>
+            <div class="checks" id="triggerFoods">
+              <label class="check-item"><input type="checkbox" value="Dairy" />Dairy</label>
+              <label class="check-item"><input type="checkbox" value="Gluten" />Gluten</label>
+              <label class="check-item"><input type="checkbox" value="Fatty food" />Fatty food</label>
+              <label class="check-item"><input type="checkbox" value="Spicy food" />Spicy food</label>
+              <label class="check-item"><input type="checkbox" value="Fried food" />Fried food</label>
+              <label class="check-item"><input type="checkbox" value="Processed food" />Processed food</label>
+              <label class="check-item"><input type="checkbox" value="High sugar" />High sugar</label>
+              <label class="check-item"><input type="checkbox" value="Coffee" />Coffee</label>
+              <label class="check-item"><input type="checkbox" value="Alcohol" />Alcohol</label>
+              <label class="check-item"><input type="checkbox" value="No likely food trigger" />No likely food trigger</label>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>5. Medication and supplements</h2>
+            <div class="checks" id="medFlags">
+              <label class="check-item"><input type="checkbox" value="Ibuprofen" />Ibuprofen</label>
+              <label class="check-item"><input type="checkbox" value="Nurofen" />Nurofen</label>
+              <label class="check-item"><input type="checkbox" value="Naproxen" />Naproxen</label>
+              <label class="check-item"><input type="checkbox" value="Aspirin" />Aspirin</label>
+              <label class="check-item"><input type="checkbox" value="Antibiotics" />Antibiotics</label>
+              <label class="check-item"><input type="checkbox" value="Antacids" />Antacids</label>
+              <label class="check-item"><input type="checkbox" value="Probiotics" />Probiotics</label>
+              <label class="check-item"><input type="checkbox" value="Paracetamol" />Paracetamol</label>
+              <label class="check-item"><input type="checkbox" value="No medications/supplements" />No medications / supplements</label>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>6. Lifestyle factors</h2>
+            <div class="row">
+              <div><label for="exerciseIntensity">Exercise intensity</label><select id="exerciseIntensity"><option value="">Select</option><option>None</option><option>Light</option><option>Moderate</option><option>Hard</option></select></div>
+              <div><label for="stressors">Main stress level context</label><select id="stressors"><option value="">Select</option><option>No unusual stress</option><option>Work stress</option><option>Family stress</option><option>Poor sleep impact</option><option>Busy day</option><option>Emotionally difficult day</option></select></div>
+              <div><label for="dayRating">Today was</label><select id="dayRating"><option value="">Select</option><option>Good</option><option>Manageable</option><option>Difficult</option><option>Bad flare day</option></select></div>
+            </div>
+
+            <h3>Quick activity tick boxes</h3>
+            <div class="checks" id="activityChecks">
+              <label class="check-item"><input type="checkbox" value="Walked" />Walked</label>
+              <label class="check-item"><input type="checkbox" value="Gym" />Gym</label>
+              <label class="check-item"><input type="checkbox" value="Heavy work" />Heavy work</label>
+              <label class="check-item"><input type="checkbox" value="Long sitting day" />Long sitting day</label>
+              <label class="check-item"><input type="checkbox" value="Rested more" />Rested more</label>
+              <label class="check-item"><input type="checkbox" value="No significant activity" />No significant activity</label>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>7. Timing and pattern</h2>
+            <h3>What seemed to happen before symptoms started?</h3>
+            <div class="checks" id="beforeSymptoms">
+              <label class="check-item"><input type="checkbox" value="Woke up with them" />Woke up with them</label>
+              <label class="check-item"><input type="checkbox" value="After eating" />After eating</label>
+              <label class="check-item"><input type="checkbox" value="After coffee" />After coffee</label>
+              <label class="check-item"><input type="checkbox" value="After exercise" />After exercise</label>
+              <label class="check-item"><input type="checkbox" value="During stress" />During stress</label>
+              <label class="check-item"><input type="checkbox" value="Evening only" />Evening only</label>
+              <label class="check-item"><input type="checkbox" value="No obvious trigger" />No obvious trigger</label>
+            </div>
+
+            <h3>Did anything help?</h3>
+            <div class="checks" id="whatHelped">
+              <label class="check-item"><input type="checkbox" value="Rest" />Rest</label>
+              <label class="check-item"><input type="checkbox" value="Food" />Food</label>
+              <label class="check-item"><input type="checkbox" value="Not eating" />Not eating</label>
+              <label class="check-item"><input type="checkbox" value="Water" />Water</label>
+              <label class="check-item"><input type="checkbox" value="Antacid" />Antacid</label>
+              <label class="check-item"><input type="checkbox" value="Bowel motion" />Bowel motion</label>
+              <label class="check-item"><input type="checkbox" value="Heat pack" />Heat pack</label>
+              <label class="check-item"><input type="checkbox" value="Gentle walk" />Gentle walk</label>
+              <label class="check-item"><input type="checkbox" value="Nothing" />Nothing</label>
+            </div>
+
+            <div class="form-grid" style="margin-top:12px;">
+              <div><label for="triggerGuess">Best guess at overall trigger</label><select id="triggerGuess"><option value="">Select</option><option>Food related</option><option>Stress related</option><option>Poor sleep related</option><option>No idea</option><option>Likely mixed factors</option></select></div>
+              <div><label for="doctorNotes">Doctor note summary</label><select id="doctorNotes"><option value="">Select</option><option>Nothing extra today</option><option>Typical flare pattern</option><option>Worse than my usual pattern</option><option>Better than my usual pattern</option><option>Need to mention this appointment</option></select></div>
+            </div>
+          </section>
+        </main>
+
+        <aside class="sidebar">
+          <section class="card">
+            <h2>Saved entries</h2>
+            <div class="muted">Tap an entry to review or edit it. Saving with the same date updates that day.</div>
+            <div class="summary-box"><strong>Quick pattern view</strong><div id="summaryContent" class="muted" style="margin-top:6px;">No entries yet.</div></div>
+            <h3 style="margin-top:16px;">History</h3>
+            <div class="entry-list" id="entryList"></div>
+            <div class="footer-note"><span class="danger">Important:</span> This tracker is for pattern spotting, not diagnosis. Get medical advice urgently for blood in stool, black stool, severe pain, fainting, chest pain, or trouble breathing.</div>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <section id="trendsTab" class="section hidden">
+      <div class="card">
+        <h2>Trends dashboard</h2>
+        <div class="muted">Shows the latest 14 days if available. Use this to see whether symptom flares line up with sleep, stress, or flare ratings.</div>
+        <div class="kpi-grid" style="margin-top:14px;">
+          <div class="kpi"><div class="muted">Entries logged</div><div class="value" id="kpiEntries">0</div></div>
+          <div class="kpi"><div class="muted">Flare days</div><div class="value" id="kpiFlareDays">0</div></div>
+          <div class="kpi"><div class="muted">Average sleep</div><div class="value" id="kpiSleep">-</div></div>
+          <div class="kpi"><div class="muted">Average stress</div><div class="value" id="kpiStress">-</div></div>
+        </div>
+        <div class="chart-grid" style="margin-top:16px;">
+          <div class="chart-card"><strong>Core symptom trend</strong><canvas id="symptomChart" width="900" height="220"></canvas><div class="legend">Gut tenderness, bloating, fatigue, joint pain, and flu-like feeling.</div></div>
+          <div class="chart-card"><strong>Sleep and stress trend</strong><canvas id="sleepStressChart" width="900" height="220"></canvas><div class="legend">Checks whether poor sleep or higher stress show up around worse days.</div></div>
+          <div class="chart-card"><strong>Flare days</strong><canvas id="flareChart" width="900" height="220"></canvas><div class="legend">Higher bars mean more severe flare days.</div></div>
+        </div>
+        <div class="summary-box" style="margin-top:16px;"><strong>Pattern observations</strong><ul class="insight-list" id="insightList"><li>Log a few days first to see useful patterns.</li></ul></div>
+      </div>
+    </section>
+
+    <section id="reportTab" class="section hidden">
+      <div class="card">
+        <h2>Doctor summary report</h2>
+        <div class="muted">This creates a simple appointment-ready summary from your saved entries. It is designed to print cleanly and read well on mobile.</div>
+        <div class="report-actions" style="margin-top:12px;">
+          <button id="refreshReportBtn">Refresh report</button>
+          <button id="printReportBtn">Print doctor summary</button>
+          <button class="no-print" id="copyReportBtn">Copy summary text</button>
+        </div>
+        <div class="mobile-note">On mobile, open this file in your browser, go to Doctor summary, then use Print / Save PDF if you want a shareable copy.</div>
+
+        <div class="report-grid" style="margin-top:16px;">
+          <div class="report-box">
+            <h3>Tracking overview</h3>
+            <div id="reportOverview"></div>
+          </div>
+          <div class="report-box">
+            <h3>Highest average symptoms</h3>
+            <div id="reportSymptoms"></div>
+          </div>
+          <div class="report-box">
+            <h3>Most repeated links</h3>
+            <div id="reportLinks"></div>
+          </div>
+          <div class="report-box">
+            <h3>Clinical flags recorded</h3>
+            <div id="reportFlags"></div>
+          </div>
+        </div>
+
+        <div class="report-box" style="margin-top:12px;">
+          <h3>Plain-English summary for doctor</h3>
+          <div id="doctorSummaryText" class="doctor-summary"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+const STORAGE_KEY = "healthDiaryEntries_v4";
+const numericSelectIds = ["overallWellness","energy","mood","stress","gutTenderness","bloating","headache","jointPain","fatigue","fluLike"];
+const fieldIds = ["date","day","sleepHours","sleepQuality","overallWellness","energy","mood","stress","flareDay","flareLength","gutTenderness","bloating","headache","jointPain","fatigue","fluLike","bowelCount","stoolType","gutNotes","mealPattern","caffeine","alcohol","water","exerciseIntensity","stressors","dayRating","triggerGuess","doctorNotes"];
+const checkboxGroups = {
+  otherSymptomsChecks:"#otherSymptomsChecks input[type=checkbox]",
+  discomfortLocation:"#discomfortLocation input[type=checkbox]",
+  discomfortType:"#discomfortType input[type=checkbox]",
+  bowelFlags:"#bowelFlags input[type=checkbox]",
+  triggerFoods:"#triggerFoods input[type=checkbox]",
+  medFlags:"#medFlags input[type=checkbox]",
+  activityChecks:"#activityChecks input[type=checkbox]",
+  beforeSymptoms:"#beforeSymptoms input[type=checkbox]",
+  whatHelped:"#whatHelped input[type=checkbox]"
+};
+const flareMap = {"":0,"No":0,"Mild":1,"Moderate":2,"Severe":3};
+const chartColors = ["#1d4ed8","#059669","#b45309","#7c3aed","#dc2626"];
+
+function fillNumericSelects(){
+  numericSelectIds.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select</option>' + Array.from({length:11}, (_,i)=>`<option>${i}</option>`).join("");
+  });
+}
+function getEntries(){
+  try{
+    const current = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(Array.isArray(current)) return current;
+    const oldKeys = ["healthDiaryEntries_v3","healthDiaryEntries_v2","healthDiaryEntries_v1"];
+    for (const key of oldKeys){
+      const data = JSON.parse(localStorage.getItem(key));
+      if(Array.isArray(data)) return data;
+    }
+    return [];
+  }catch(e){ return []; }
+}
+function setEntries(entries){ localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+function todayISO(){ return new Date().toISOString().split("T")[0]; }
+function dayNameFromDate(dateStr){
+  if(!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  return isNaN(d) ? "" : d.toLocaleDateString(undefined,{weekday:"long"});
+}
+function collectChecks(groupId){ return [...document.querySelectorAll(checkboxGroups[groupId])].filter(el=>el.checked).map(el=>el.value); }
+function setChecks(groupId, values=[]){ [...document.querySelectorAll(checkboxGroups[groupId])].forEach(el=>el.checked = values.includes(el.value)); }
+function collectForm(){
+  const data = {};
+  fieldIds.forEach(id => data[id] = document.getElementById(id).value);
+  Object.keys(checkboxGroups).forEach(groupId => data[groupId] = collectChecks(groupId));
+  return data;
+}
+function populateForm(data){
+  clearForm(false);
+  fieldIds.forEach(id => { const el = document.getElementById(id); if(el) el.value = data[id] || ""; });
+  Object.keys(checkboxGroups).forEach(groupId => setChecks(groupId, data[groupId] || []));
+}
+function clearForm(resetDate=true){
+  fieldIds.forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
+  Object.keys(checkboxGroups).forEach(groupId => setChecks(groupId, []));
+  if(resetDate){
+    document.getElementById("date").value = todayISO();
+    document.getElementById("day").value = dayNameFromDate(todayISO());
+  }
+}
+function saveEntry(){
+  const data = collectForm();
+  if(!data.date){ alert("Please enter a date."); return; }
+  if(!data.day) data.day = dayNameFromDate(data.date);
+  const entries = getEntries();
+  const idx = entries.findIndex(e => e.date === data.date);
+  if(idx >= 0) entries[idx] = data; else entries.push(data);
+  entries.sort((a,b) => b.date.localeCompare(a.date));
+  setEntries(entries);
+  renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport();
+  alert("Entry saved.");
+}
+function deleteEntry(date){
+  setEntries(getEntries().filter(e => e.date !== date));
+  renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport();
+}
+function renderEntries(){
+  const list = document.getElementById("entryList");
+  const entries = getEntries();
+  list.innerHTML = "";
+  if(entries.length === 0){ list.innerHTML = '<div class="muted">No entries saved yet.</div>'; return; }
+  entries.forEach(entry => {
+    const div = document.createElement("div");
+    div.className = "entry";
+    const symptomPills = [];
+    if(entry.flareDay) symptomPills.push(`<span class="pill">${entry.flareDay} flare</span>`);
+    [["Bloating",entry.bloating],["Fatigue",entry.fatigue],["Joint pain",entry.jointPain],["Flu-like",entry.fluLike]].forEach(([name,val]) => {
+      const num = Number(val); if(!isNaN(num) && num >= 5) symptomPills.push(`<span class="pill">${name}: ${num}</span>`);
+    });
+    div.innerHTML = `<strong>${entry.date}${entry.day ? " • " + entry.day : ""}</strong><div class="meta">Wellness: ${entry.overallWellness || "-"} / 10 • Energy: ${entry.energy || "-"} • Stress: ${entry.stress || "-"}</div><div>${symptomPills.join("") || '<span class="muted">No high symptom markers recorded</span>'}</div><div class="entry-actions"><button data-load="${entry.date}">Open</button><button data-delete="${entry.date}">Delete</button></div>`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll("[data-load]").forEach(btn => btn.addEventListener("click", () => {
+    const entry = getEntries().find(e => e.date === btn.dataset.load);
+    if(entry) populateForm(entry);
+    switchTab("diaryTab");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }));
+  list.querySelectorAll("[data-delete]").forEach(btn => btn.addEventListener("click", () => {
+    if(confirm("Delete this entry?")) deleteEntry(btn.dataset.delete);
+  }));
+}
+function average(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+function parseSleepValue(v){
+  if (v === "Less than 4") return 3.5;
+  if (v === "10+") return 10;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}
+function format1(v){ return v === null || Number.isNaN(v) ? "-" : v.toFixed(1); }
+function topCounts(items, limit=5){
+  const counts = {};
+  items.forEach(i => counts[i] = (counts[i] || 0) + 1);
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+}
+function updateSummary(){
+  const entries = getEntries();
+  const target = document.getElementById("summaryContent");
+  if(entries.length === 0){ target.textContent = "No entries yet."; return; }
+  const nums = f => entries.map(e => Number(e[f])).filter(v => !isNaN(v));
+  const flareCount = entries.filter(e => e.flareDay && e.flareDay !== "No").length;
+  const links = topCounts(entries.flatMap(e => [...(e.triggerFoods || []), ...(e.beforeSymptoms || [])]), 3);
+  target.innerHTML = `Entries saved: <strong>${entries.length}</strong><br>Average bloating: <strong>${format1(average(nums("bloating")))}</strong><br>Average fatigue: <strong>${format1(average(nums("fatigue")))}</strong><br>Average joint pain: <strong>${format1(average(nums("jointPain")))}</strong><br>Flare days logged: <strong>${flareCount}</strong><br>Most repeated possible links: <strong>${links.length ? links.map(t => `${t[0]} (${t[1]})`).join(", ") : "Not enough data yet"}</strong>`;
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(getEntries(), null, 2)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "health-diary-export.json"; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportCSV(){
+  const entries = getEntries(); if(!entries.length){ alert("No entries to export."); return; }
+  const headers = [...fieldIds, ...Object.keys(checkboxGroups)];
+  const esc = v => `"${String(Array.isArray(v) ? v.join("; ") : (v ?? "")).replace(/"/g,'""')}"`;
+  const rows = [headers.join(",")];
+  entries.forEach(entry => rows.push(headers.map(h => esc(entry[h])).join(",")));
+  const blob = new Blob([rows.join("\n")], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "health-diary-export.csv"; a.click(); URL.revokeObjectURL(a.href);
+}
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!Array.isArray(data)) throw new Error("bad");
+      setEntries(data); renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); alert("Import complete.");
+    }catch(err){ alert("That file could not be imported."); }
+  };
+  reader.readAsText(file);
+}
+function latestEntries(limit=14){ return getEntries().slice().sort((a,b)=>a.date.localeCompare(b.date)).slice(-limit); }
+
+function drawLineChart(canvasId, labels, series){
+  const c = document.getElementById(canvasId), ctx = c.getContext("2d"), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  if(!labels.length){ ctx.fillStyle="#6b7280"; ctx.font="16px Arial"; ctx.fillText("No data yet.",20,40); return; }
+  const pad = {left:44,right:16,top:16,bottom:34}, chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom;
+  ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){
+    const y = pad.top + chartH * i / 5;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(w-pad.right,y); ctx.stroke();
+    ctx.fillStyle="#6b7280"; ctx.font="11px Arial"; ctx.fillText(String(10 - 2*i),16,y+4);
+  }
+  labels.forEach((label,i) => {
+    const x = pad.left + (labels.length===1 ? chartW/2 : chartW*i/(labels.length-1));
+    ctx.fillStyle="#6b7280"; ctx.font="11px Arial"; ctx.fillText(label.slice(5), x-14, h-12);
+  });
+  series.forEach((s,idx) => {
+    ctx.strokeStyle = chartColors[idx % chartColors.length]; ctx.lineWidth = 2; ctx.beginPath();
+    let started = false;
+    s.values.forEach((v,i) => {
+      if(v === null || v === "" || Number.isNaN(Number(v))) return;
+      const x = pad.left + (labels.length===1 ? chartW/2 : chartW*i/(labels.length-1));
+      const y = pad.top + chartH - (Number(v)/10)*chartH;
+      if(!started){ ctx.moveTo(x,y); started = true; } else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    s.values.forEach((v,i) => {
+      if(v === null || v === "" || Number.isNaN(Number(v))) return;
+      const x = pad.left + (labels.length===1 ? chartW/2 : chartW*i/(labels.length-1));
+      const y = pad.top + chartH - (Number(v)/10)*chartH;
+      ctx.fillStyle = chartColors[idx % chartColors.length]; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+    });
+  });
+  series.forEach((s,idx) => {
+    const x = 54 + idx*150; ctx.fillStyle = chartColors[idx % chartColors.length]; ctx.fillRect(x,4,10,10);
+    ctx.fillStyle = "#374151"; ctx.font = "12px Arial"; ctx.fillText(s.name, x+16, 13);
+  });
+}
+function drawBarChart(canvasId, labels, values){
+  const c = document.getElementById(canvasId), ctx = c.getContext("2d"), w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  if(!labels.length){ ctx.fillStyle="#6b7280"; ctx.font="16px Arial"; ctx.fillText("No data yet.",20,40); return; }
+  const pad = {left:44,right:16,top:16,bottom:34}, chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom;
+  ctx.strokeStyle="#e5e7eb"; ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){
+    const y = pad.top + chartH * i / 3;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(w-pad.right,y); ctx.stroke();
+    ctx.fillStyle="#6b7280"; ctx.font="11px Arial"; ctx.fillText(String(3-i),16,y+4);
+  }
+  const barSpace = chartW / labels.length, barWidth = Math.min(34, barSpace * 0.6);
+  labels.forEach((label,i) => {
+    const x = pad.left + i*barSpace + (barSpace-barWidth)/2, val = Number(values[i]) || 0, barHeight = (val/3)*chartH, y = pad.top + chartH - barHeight;
+    ctx.fillStyle = val >= 3 ? "#dc2626" : val >= 2 ? "#f59e0b" : val >= 1 ? "#3b82f6" : "#cbd5e1";
+    ctx.fillRect(x,y,barWidth,barHeight);
+    ctx.fillStyle="#6b7280"; ctx.font="11px Arial"; ctx.fillText(label.slice(5), x-4, h-12);
+  });
+}
+function buildInsights(entries){
+  const insights = [];
+  if(entries.length < 4){ return ["Log at least 4 days before expecting meaningful patterns."]; }
+  const avg = (field, filterFn=null) => {
+    const source = filterFn ? entries.filter(filterFn) : entries;
+    const vals = source.map(e => Number(e[field])).filter(v => !isNaN(v));
+    return vals.length ? average(vals) : null;
+  };
+  const flareDays = entries.filter(e => (flareMap[e.flareDay || ""] || 0) > 0);
+  const nonFlareDays = entries.filter(e => (flareMap[e.flareDay || ""] || 0) === 0);
+  const flareStress = avg("stress", e => (flareMap[e.flareDay || ""] || 0) > 0);
+  const nonFlareStress = avg("stress", e => (flareMap[e.flareDay || ""] || 0) === 0);
+  if(flareStress !== null && nonFlareStress !== null && flareStress - nonFlareStress >= 1.5) insights.push(`Stress looks higher on flare days (${format1(flareStress)}) than on non-flare days (${format1(nonFlareStress)}).`);
+  const flareSleep = average(entries.filter(e => (flareMap[e.flareDay || ""] || 0) > 0).map(e => parseSleepValue(e.sleepHours)).filter(v => v !== null));
+  const nonFlareSleep = average(entries.filter(e => (flareMap[e.flareDay || ""] || 0) === 0).map(e => parseSleepValue(e.sleepHours)).filter(v => v !== null));
+  if(flareSleep !== null && nonFlareSleep !== null && nonFlareSleep - flareSleep >= 1) insights.push(`Sleep looks lower on flare days (${format1(flareSleep)} hrs) than on non-flare days (${format1(nonFlareSleep)} hrs).`);
+  const bestBefore = topCounts(flareDays.flatMap(e => e.beforeSymptoms || []), 1)[0];
+  if(bestBefore) insights.push(`The most common lead-in before symptom days is "${bestBefore[0]}" (${bestBefore[1]} times).`);
+  const bestFood = topCounts(flareDays.flatMap(e => e.triggerFoods || []), 1)[0];
+  if(bestFood) insights.push(`The most common food flag on flare days is "${bestFood[0]}" (${bestFood[1]} times).`);
+  const symptomPairs = [["Bloating","bloating"],["Fatigue","fatigue"],["Joint pain","jointPain"],["Flu-like","fluLike"]]
+    .map(([name,key]) => ({name, avg: avg(key)})).filter(x => x.avg !== null).sort((a,b)=>b.avg-a.avg);
+  if(symptomPairs.length) insights.push(`Your highest average symptom so far is ${symptomPairs[0].name.toLowerCase()} (${format1(symptomPairs[0].avg)}/10).`);
+  return insights.length ? insights.slice(0,5) : ["No clear pattern stands out yet. Keep logging daily for another 1 to 2 weeks."];
+}
+function renderDashboard(){
+  const entries = latestEntries(14), labels = entries.map(e => e.date);
+  drawLineChart("symptomChart", labels, [
+    {name:"Gut", values: entries.map(e => Number(e.gutTenderness) || 0)},
+    {name:"Bloating", values: entries.map(e => Number(e.bloating) || 0)},
+    {name:"Fatigue", values: entries.map(e => Number(e.fatigue) || 0)},
+    {name:"Joint", values: entries.map(e => Number(e.jointPain) || 0)},
+    {name:"Flu-like", values: entries.map(e => Number(e.fluLike) || 0)}
+  ]);
+  drawLineChart("sleepStressChart", labels, [
+    {name:"Sleep hrs", values: entries.map(e => { const v = parseSleepValue(e.sleepHours); return v === null ? null : Math.min(v,10); })},
+    {name:"Stress", values: entries.map(e => Number(e.stress) || 0)}
+  ]);
+  drawBarChart("flareChart", labels, entries.map(e => flareMap[e.flareDay || ""] || 0));
+  const all = getEntries();
+  document.getElementById("kpiEntries").textContent = all.length;
+  document.getElementById("kpiFlareDays").textContent = all.filter(e => (flareMap[e.flareDay || ""] || 0) > 0).length;
+  const sleepVals = all.map(e => parseSleepValue(e.sleepHours)).filter(v => v !== null);
+  const stressVals = all.map(e => Number(e.stress)).filter(v => !isNaN(v));
+  document.getElementById("kpiSleep").textContent = sleepVals.length ? format1(average(sleepVals)) + " hrs" : "-";
+  document.getElementById("kpiStress").textContent = stressVals.length ? format1(average(stressVals)) : "-";
+  const insightList = document.getElementById("insightList");
+  insightList.innerHTML = "";
+  buildInsights(entries).forEach(item => { const li = document.createElement("li"); li.textContent = item; insightList.appendChild(li); });
+}
+function symptomAverages(entries){
+  const defs = [["Gut tenderness","gutTenderness"],["Bloating","bloating"],["Headache","headache"],["Joint pain","jointPain"],["Fatigue","fatigue"],["Flu-like","fluLike"]];
+  return defs.map(([name,key]) => {
+    const vals = entries.map(e => Number(e[key])).filter(v => !isNaN(v));
+    return {name, avg: average(vals)};
+  }).filter(x => x.avg !== null).sort((a,b)=>b.avg-a.avg);
+}
+function renderDoctorReport(){
+  const entries = getEntries().slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const overview = document.getElementById("reportOverview");
+  const symptoms = document.getElementById("reportSymptoms");
+  const links = document.getElementById("reportLinks");
+  const flags = document.getElementById("reportFlags");
+  const summary = document.getElementById("doctorSummaryText");
+  if(!entries.length){
+    overview.innerHTML = "<span class='muted'>No entries saved yet.</span>";
+    symptoms.innerHTML = "<span class='muted'>No data yet.</span>";
+    links.innerHTML = "<span class='muted'>No data yet.</span>";
+    flags.innerHTML = "<span class='muted'>No data yet.</span>";
+    summary.textContent = "No entries saved yet.";
+    return;
+  }
+  const first = entries[0].date;
+  const last = entries[entries.length - 1].date;
+  const flareDays = entries.filter(e => (flareMap[e.flareDay || ""] || 0) > 0).length;
+  const avgSleep = average(entries.map(e => parseSleepValue(e.sleepHours)).filter(v => v !== null));
+  const avgStress = average(entries.map(e => Number(e.stress)).filter(v => !isNaN(v)));
+  overview.innerHTML = `<div><strong>Date range:</strong> ${first} to ${last}</div><div><strong>Total entries:</strong> ${entries.length}</div><div><strong>Flare days:</strong> ${flareDays}</div><div><strong>Average sleep:</strong> ${format1(avgSleep)} hrs</div><div><strong>Average stress:</strong> ${format1(avgStress)} / 10</div>`;
+  const symptomList = symptomAverages(entries).slice(0,6);
+  symptoms.innerHTML = symptomList.length ? symptomList.map(s => `<div class="badge">${s.name}: ${format1(s.avg)}/10</div>`).join("") : "<span class='muted'>No symptom scores recorded.</span>";
+  const topLinkItems = topCounts(entries.flatMap(e => [...(e.triggerFoods || []), ...(e.beforeSymptoms || []), ...(e.otherSymptomsChecks || [])]), 8);
+  links.innerHTML = topLinkItems.length ? topLinkItems.map(x => `<div class="badge">${x[0]} (${x[1]})</div>`).join("") : "<span class='muted'>No repeated links recorded yet.</span>";
+  const flagItems = topCounts(entries.flatMap(e => e.bowelFlags || []), 8);
+  flags.innerHTML = flagItems.length ? flagItems.map(x => `<div class="badge">${x[0]} (${x[1]})</div>`).join("") : "<span class='muted'>No bowel flags recorded.</span>";
+  const worstSymptom = symptomList[0] ? `${symptomList[0].name.toLowerCase()} averaging ${format1(symptomList[0].avg)}/10` : "no clear symptom average yet";
+  const commonLinks = topLinkItems.slice(0,3).map(x => x[0]).join(", ");
+  const bowelFlagsText = flagItems.length ? flagItems.slice(0,4).map(x => x[0]).join(", ") : "none logged";
+  const noteList = entries.map(e => e.doctorNotes).filter(Boolean).slice(-3).join(" | ");
+  const summaryText = [
+    `I have been tracking recurring gut and general health symptoms from ${first} to ${last}.`,
+    `I logged ${entries.length} days, including ${flareDays} flare days.`,
+    `My most prominent average symptoms have been ${worstSymptom}.`,
+    `Average sleep during the tracking period was ${format1(avgSleep)} hours and average stress was ${format1(avgStress)}/10.`,
+    commonLinks ? `The most repeated possible links or lead-ins have been: ${commonLinks}.` : `No clear repeated trigger pattern has emerged yet.`,
+    `Bowel-related flags recorded: ${bowelFlagsText}.`,
+    noteList ? `Notes I wanted to mention: ${noteList}.` : `I have not added extra notes yet.`
+  ].join("\n\n");
+  summary.textContent = summaryText;
+}
+function switchTab(tabId){
+  document.querySelectorAll(".section").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById(tabId).classList.remove("hidden");
+  document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add("active");
+  if(tabId === "trendsTab") setTimeout(renderDashboard, 50);
+  if(tabId === "reportTab") setTimeout(renderDoctorReport, 50);
+}
+
+document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+document.getElementById("saveBtn").addEventListener("click", saveEntry);
+document.getElementById("newBtn").addEventListener("click", () => clearForm());
+document.getElementById("exportBtn").addEventListener("click", exportJSON);
+document.getElementById("csvBtn").addEventListener("click", exportCSV);
+document.getElementById("printBtn").addEventListener("click", () => window.print());
+document.getElementById("refreshReportBtn").addEventListener("click", renderDoctorReport);
+document.getElementById("printReportBtn").addEventListener("click", () => { switchTab("reportTab"); setTimeout(() => window.print(), 60); });
+document.getElementById("copyReportBtn").addEventListener("click", async () => {
+  const text = document.getElementById("doctorSummaryText").textContent;
+  try{ await navigator.clipboard.writeText(text); alert("Doctor summary copied."); }
+  catch(e){ alert("Could not copy automatically on this browser."); }
+});
+document.getElementById("importFile").addEventListener("change", e => { if(e.target.files && e.target.files[0]) importJSON(e.target.files[0]); e.target.value = ""; });
+document.getElementById("date").addEventListener("change", e => { document.getElementById("day").value = dayNameFromDate(e.target.value); });
+
+fillNumericSelects();
+clearForm();
+renderEntries();
+updateSummary();
+renderDashboard();
+renderDoctorReport();
+</script>
+</body>
+</html>
