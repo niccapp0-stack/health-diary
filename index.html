@@ -16,6 +16,9 @@
     h1{margin:0 0 6px 0;font-size:clamp(24px,4vw,30px)}
     .sub{color:var(--muted);max-width:860px}
     .toolbar,.tabs,.entry-actions,.report-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .save-status{display:flex;align-items:center;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--muted);font-weight:700;min-height:42px;font-size:14px}
+    .save-status.saved{color:#166534;border-color:#bbf7d0;background:#f0fdf4}
+    .save-status.saving{color:#92400e;border-color:#fde68a;background:#fffbeb}
     button,.filelabel{
       border:1px solid var(--line);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700;
       min-height:42px;font-size:14px
@@ -83,7 +86,7 @@
     <div class="topbar">
       <div>
         <h1>Daily Health & Lifestyle Diary</h1>
-        <div class="sub">Faster mobile diary with more dropdowns and tick boxes, fewer typing fields, plus trends and a doctor summary.</div>
+        <div class="sub">Faster mobile diary with auto-save, more dropdowns and tick boxes, fewer typing fields, plus trends and a doctor summary.</div>
       </div>
       <div class="toolbar">
         <button class="primary" id="saveBtn">Save entry</button>
@@ -93,6 +96,7 @@
         <button id="printBtn">Print / Save PDF</button>
         <label class="filelabel" for="importFile">Import JSON</label>
         <input id="importFile" type="file" accept=".json" class="hidden" />
+        <div id="saveStatus" class="save-status">Ready</div>
       </div>
     </div>
 
@@ -357,7 +361,7 @@
   </div>
 
 <script>
-const STORAGE_KEY = "healthDiaryEntries_v5";
+const STORAGE_KEY = "healthDiaryEntries_v6";
 const numericSelectIds = ["overallWellness","energy","mood","stress","gutTenderness","bloating","headache","jointPain","fatigue","fluLike"];
 const fieldIds = ["date","day","sleepHours","sleepQuality","overallWellness","energy","mood","stress","flareDay","flareLength","gutTenderness","bloating","headache","jointPain","fatigue","fluLike","bowelCount","stoolType","gutNotes","mealPattern","caffeine","alcohol","water","exerciseIntensity","stressors","dayRating","triggerGuess","doctorNotes"];
 const checkboxGroups = {
@@ -373,6 +377,7 @@ const checkboxGroups = {
 };
 const flareMap = {"":0,"No":0,"Mild":1,"Moderate":2,"Severe":3};
 const chartColors = ["#1d4ed8","#059669","#b45309","#7c3aed","#dc2626"];
+let autosaveTimer = null;
 
 function scoreLabel(i){
   if(i === 0) return "0 – none";
@@ -435,7 +440,7 @@ function getEntries(){
   try{
     const current = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if(Array.isArray(current)) return current;
-    const oldKeys = ["healthDiaryEntries_v4","healthDiaryEntries_v3","healthDiaryEntries_v2","healthDiaryEntries_v1"];
+    const oldKeys = ["healthDiaryEntries_v5","healthDiaryEntries_v4","healthDiaryEntries_v3","healthDiaryEntries_v2","healthDiaryEntries_v1"];
     for (const key of oldKeys){
       const data = JSON.parse(localStorage.getItem(key));
       if(Array.isArray(data)) return data;
@@ -462,6 +467,7 @@ function populateForm(data){
   clearForm(false);
   fieldIds.forEach(id => { const el = document.getElementById(id); if(el) el.value = data[id] || ""; });
   Object.keys(checkboxGroups).forEach(groupId => setChecks(groupId, data[groupId] || []));
+  setSaveStatus("saved", "Loaded saved entry");
 }
 function clearForm(resetDate=true){
   fieldIds.forEach(id => { const el = document.getElementById(id); if(el) el.value = ""; });
@@ -470,15 +476,23 @@ function clearForm(resetDate=true){
     document.getElementById("date").value = todayISO();
     document.getElementById("day").value = dayNameFromDate(todayISO());
   }
+  setSaveStatus("", "Ready");
 }
 function parseLeadingNumber(v){
   if(typeof v !== "string") return Number(v);
   const m = v.match(/^(\d+)/);
   return m ? Number(m[1]) : Number(v);
 }
-function saveEntry(){
+function setSaveStatus(state, text){
+  const el = document.getElementById("saveStatus");
+  if(!el) return;
+  el.classList.remove("saved","saving");
+  if(state) el.classList.add(state);
+  el.textContent = text;
+}
+function saveEntrySilently(statusText="Saved"){
   const data = collectForm();
-  if(!data.date){ alert("Please enter a date."); return; }
+  if(!data.date) return;
   if(!data.day) data.day = dayNameFromDate(data.date);
   const entries = getEntries();
   const idx = entries.findIndex(e => e.date === data.date);
@@ -486,11 +500,27 @@ function saveEntry(){
   entries.sort((a,b) => b.date.localeCompare(a.date));
   setEntries(entries);
   renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport();
+  setSaveStatus("saved", statusText);
+}
+function queueAutosave(){
+  const dateVal = document.getElementById("date").value;
+  if(!dateVal) return;
+  setSaveStatus("saving", "Saving...");
+  if(autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    saveEntrySilently("Saved automatically");
+  }, 350);
+}
+function saveEntry(){
+  const data = collectForm();
+  if(!data.date){ alert("Please enter a date."); return; }
+  saveEntrySilently("Saved");
   alert("Entry saved.");
 }
 function deleteEntry(date){
   setEntries(getEntries().filter(e => e.date !== date));
   renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport();
+  setSaveStatus("saved", "Entry deleted");
 }
 function renderEntries(){
   const list = document.getElementById("entryList");
@@ -559,7 +589,7 @@ function importJSON(file){
     try{
       const data = JSON.parse(e.target.result);
       if(!Array.isArray(data)) throw new Error("bad");
-      setEntries(data); renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); alert("Import complete.");
+      setEntries(data); renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); setSaveStatus("saved","Import complete"); alert("Import complete.");
     }catch(err){ alert("That file could not be imported."); }
   };
   reader.readAsText(file);
@@ -729,6 +759,18 @@ function switchTab(tabId){
   if(tabId === "trendsTab") setTimeout(renderDashboard, 50);
   if(tabId === "reportTab") setTimeout(renderDoctorReport, 50);
 }
+function attachAutosaveListeners(){
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if(el.id === "importFile") return;
+    const eventName = (el.type === "checkbox" || el.tagName === "SELECT" || el.type === "date") ? "change" : "input";
+    el.addEventListener(eventName, () => {
+      if(el.id === "date"){
+        document.getElementById("day").value = dayNameFromDate(el.value);
+      }
+      queueAutosave();
+    });
+  });
+}
 
 document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
 document.getElementById("saveBtn").addEventListener("click", saveEntry);
@@ -748,6 +790,7 @@ document.getElementById("date").addEventListener("change", e => { document.getEl
 
 fillNumericSelects();
 clearForm();
+attachAutosaveListeners();
 renderEntries();
 updateSummary();
 renderDashboard();
