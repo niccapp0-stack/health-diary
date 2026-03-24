@@ -71,6 +71,13 @@
     .report-box h3{margin-top:0}
     .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#f3f4f6;font-size:12px;font-weight:700;margin:0 6px 6px 0}
     .doctor-summary{white-space:pre-wrap}
+
+    .history-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media (max-width:800px){.history-grid{grid-template-columns:1fr}}
+    .history-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+    .history-card h3{margin-top:0}
+    .history-empty{color:var(--muted)}
+
     .mobile-note{font-size:12px;color:var(--muted);margin-top:6px}
     @media print{
       body{background:#fff}
@@ -104,6 +111,7 @@
       <button class="tab-btn active" data-tab="diaryTab">Diary</button>
       <button class="tab-btn" data-tab="trendsTab">Trends dashboard</button>
       <button class="tab-btn" data-tab="reportTab">Doctor summary</button>
+      <button class="tab-btn" data-tab="historyTab">History</button>
     </div>
 
     <section id="diaryTab" class="section">
@@ -152,6 +160,7 @@
               <label class="check-item"><input type="checkbox" value="Poor appetite" />Poor appetite</label>
               <label class="check-item"><input type="checkbox" value="Brain fog" />Brain fog</label>
               <label class="check-item"><input type="checkbox" value="Body aches" />Body aches</label>
+              <label class="check-item"><input type="checkbox" value="Farting" />Farting</label>
               <label class="check-item"><input type="checkbox" value="Chills" />Chills</label>
               <label class="check-item"><input type="checkbox" value="Feeling flat" />Feeling flat</label>
               <label class="check-item"><input type="checkbox" value="No extra symptoms" />No extra symptoms</label>
@@ -234,6 +243,8 @@
               <label class="check-item"><input type="checkbox" value="Antacids" />Antacids</label>
               <label class="check-item"><input type="checkbox" value="Probiotics" />Probiotics</label>
               <label class="check-item"><input type="checkbox" value="Paracetamol" />Paracetamol</label>
+              <label class="check-item"><input type="checkbox" value="Lexapro" />Lexapro</label>
+              <label class="check-item"><input type="checkbox" value="Corsava" />Corsava</label>
               <label class="check-item"><input type="checkbox" value="No medications/supplements" />No medications / supplements</label>
             </div>
           </section>
@@ -249,6 +260,7 @@
             <h3>Quick activity tick boxes</h3>
             <div class="checks" id="activityChecks">
               <label class="check-item"><input type="checkbox" value="Walked" />Walked</label>
+              <label class="check-item"><input type="checkbox" value="Swimming" />Swimming</label>
               <label class="check-item"><input type="checkbox" value="Gym" />Gym</label>
               <label class="check-item"><input type="checkbox" value="Heavy work" />Heavy work</label>
               <label class="check-item"><input type="checkbox" value="Long sitting day" />Long sitting day</label>
@@ -358,6 +370,24 @@
         </div>
       </div>
     </section>
+  
+    <section id="historyTab" class="section hidden">
+      <div class="card">
+        <h2>Previous entries</h2>
+        <div class="muted">Your entries persist on this device and browser because they are saved in local browser storage. Open an entry below to review or edit it.</div>
+        <div class="history-grid" style="margin-top:16px;">
+          <div class="history-card">
+            <h3>Entry list</h3>
+            <div id="historyEntryList" class="entry-list"></div>
+          </div>
+          <div class="history-card">
+            <h3>Selected entry summary</h3>
+            <div id="historyPreview" class="history-empty">Tap an entry to preview it here.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
 <script>
@@ -499,7 +529,7 @@ function saveEntrySilently(statusText="Saved"){
   if(idx >= 0) entries[idx] = data; else entries.push(data);
   entries.sort((a,b) => b.date.localeCompare(a.date));
   setEntries(entries);
-  renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport();
+  renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); renderHistory();
   setSaveStatus("saved", statusText);
 }
 function queueAutosave(){
@@ -519,7 +549,7 @@ function saveEntry(){
 }
 function deleteEntry(date){
   setEntries(getEntries().filter(e => e.date !== date));
-  renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport();
+  renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); renderHistory(); renderHistory();
   setSaveStatus("saved", "Entry deleted");
 }
 function renderEntries(){
@@ -589,7 +619,7 @@ function importJSON(file){
     try{
       const data = JSON.parse(e.target.result);
       if(!Array.isArray(data)) throw new Error("bad");
-      setEntries(data); renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); setSaveStatus("saved","Import complete"); alert("Import complete.");
+      setEntries(data); renderEntries(); updateSummary(); renderDashboard(); renderDoctorReport(); renderHistory(); setSaveStatus("saved","Import complete"); alert("Import complete.");
     }catch(err){ alert("That file could not be imported."); }
   };
   reader.readAsText(file);
@@ -751,6 +781,81 @@ function renderDoctorReport(){
   ].join("\n\n");
   summary.textContent = summaryText;
 }
+
+function renderHistory(){
+  const entries = getEntries().slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const list = document.getElementById("historyEntryList");
+  const preview = document.getElementById("historyPreview");
+  if(!list || !preview) return;
+
+  list.innerHTML = "";
+  if(!entries.length){
+    list.innerHTML = '<div class="history-empty">No saved entries yet.</div>';
+    preview.innerHTML = '<div class="history-empty">No entry selected.</div>';
+    return;
+  }
+
+  entries.forEach(entry => {
+    const div = document.createElement("div");
+    div.className = "entry";
+    const bloating = parseLeadingNumber(entry.bloating);
+    const fatigue = parseLeadingNumber(entry.fatigue);
+    const joint = parseLeadingNumber(entry.jointPain);
+    const flare = entry.flareDay || "Not set";
+    div.innerHTML = `
+      <strong>${entry.date}${entry.day ? " • " + entry.day : ""}</strong>
+      <div class="meta">Flare: ${flare} • Bloating: ${isNaN(bloating) ? "-" : bloating} • Fatigue: ${isNaN(fatigue) ? "-" : fatigue} • Joint pain: ${isNaN(joint) ? "-" : joint}</div>
+      <div class="entry-actions">
+        <button data-open-history="${entry.date}">Open in diary</button>
+        <button data-preview-history="${entry.date}">Preview</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  list.querySelectorAll("[data-open-history]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const entry = getEntries().find(e => e.date === btn.dataset.openHistory);
+      if(entry) populateForm(entry);
+      switchTab("diaryTab");
+      window.scrollTo({top:0, behavior:"smooth"});
+    });
+  });
+
+  list.querySelectorAll("[data-preview-history]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const entry = getEntries().find(e => e.date === btn.dataset.previewHistory);
+      if(!entry) return;
+      const otherSymptoms = (entry.otherSymptomsChecks || []).join(", ") || "None logged";
+      const triggers = (entry.triggerFoods || []).join(", ") || "None logged";
+      const helps = (entry.whatHelped || []).join(", ") || "None logged";
+      const bowelFlags = (entry.bowelFlags || []).join(", ") || "None logged";
+      preview.innerHTML = `
+        <strong>${entry.date}${entry.day ? " • " + entry.day : ""}</strong><br><br>
+        <strong>Wellness:</strong> ${entry.overallWellness || "-"}<br>
+        <strong>Energy:</strong> ${entry.energy || "-"}<br>
+        <strong>Stress:</strong> ${entry.stress || "-"}<br>
+        <strong>Flare:</strong> ${entry.flareDay || "-"}<br>
+        <strong>Bloating:</strong> ${entry.bloating || "-"}<br>
+        <strong>Fatigue:</strong> ${entry.fatigue || "-"}<br>
+        <strong>Joint pain:</strong> ${entry.jointPain || "-"}<br>
+        <strong>Stool type:</strong> ${entry.stoolType || "-"}<br>
+        <strong>Other symptoms:</strong> ${otherSymptoms}<br>
+        <strong>Trigger foods:</strong> ${triggers}<br>
+        <strong>Bowel flags:</strong> ${bowelFlags}<br>
+        <strong>What helped:</strong> ${helps}
+      `;
+    });
+  });
+
+  // Default preview to most recent entry
+  const mostRecent = entries[0]
+  if (mostRecent){
+    const evt = list.querySelector("[data-preview-history]");
+    if (evt) evt.click();
+  }
+}
+
 function switchTab(tabId){
   document.querySelectorAll(".section").forEach(el => el.classList.add("hidden"));
   document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
@@ -758,6 +863,7 @@ function switchTab(tabId){
   document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add("active");
   if(tabId === "trendsTab") setTimeout(renderDashboard, 50);
   if(tabId === "reportTab") setTimeout(renderDoctorReport, 50);
+  if(tabId === "historyTab") setTimeout(renderHistory, 50);
 }
 function attachAutosaveListeners(){
   document.querySelectorAll("input, select, textarea").forEach(el => {
@@ -795,6 +901,7 @@ renderEntries();
 updateSummary();
 renderDashboard();
 renderDoctorReport();
+renderHistory();
 </script>
 </body>
 </html>
