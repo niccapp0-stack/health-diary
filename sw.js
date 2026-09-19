@@ -1,5 +1,5 @@
 /* Ride Book service worker: keeps the app usable offline and fetches fresh pages when online. */
-const VERSION = 'ridebook-v5';
+const VERSION = 'ridebook-v6';
 const SHELL = [
   './app.html',
   './manifest.webmanifest',

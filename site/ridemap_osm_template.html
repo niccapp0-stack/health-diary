@@ -117,7 +117,7 @@ body.embed .top .sub{display:none}
   </div>
 </header>
 <main>
-  <div id="map"><div class="stamp">build 19 Sep 2026 v5</div></div>
+  <div id="map"><div class="stamp">build 19 Sep 2026 v6</div></div>
   <aside class="side">
     <div class="head"><h2 id="sidetitle">Rides</h2><div class="cnt" id="cnt"></div>
       <div class="mode" role="group" aria-label="Panel"><button class="chip" data-mode="rides" aria-pressed="true" id="m-rides">Rides</button><button class="chip" data-mode="explore" aria-pressed="false" id="m-explore">Explore</button></div></div>
@@ -386,7 +386,16 @@ function showSuggestion(s,opt){
 }
 function clearSuggestion(){ if(sugLayer){ map.removeLayer(sugLayer); sugLayer=null; } sugMarkers.forEach(m=>map.removeLayer(m)); sugMarkers=[]; }
 function gmapsUrl(w){ const pts=resolveW(w); const ll=p=>p[0].toFixed(5)+','+p[1].toFixed(5); const mid=pts.slice(1,-1); const step=Math.max(1,Math.ceil(mid.length/8)); const wp=mid.filter((p,i)=>i%step===0).slice(0,8); return 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&origin='+ll(pts[0])+'&destination='+ll(pts[pts.length-1])+(wp.length?'&waypoints='+encodeURIComponent(wp.map(ll).join('|')):''); }
-function gpx(s,opt){ const pts=resolveW(s[opt].w); const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); let x='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Nic\'s Ride Map" xmlns="http://www.topografix.com/GPX/1/1">\n<rte><name>'+esc(s.name+' ('+opt+')')+'</name>\n'; pts.forEach(p=>{ x+='<rtept lat="'+p[0].toFixed(5)+'" lon="'+p[1].toFixed(5)+'"><name>'+esc(p[2]||'')+'</name></rtept>\n'; }); x+='</rte>\n</gpx>\n'; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([x],{type:'application/gpx+xml'})); a.download=(s.id+'_'+opt+'.gpx'); document.body.appendChild(a); a.click(); a.remove(); }
+function gpxText(s,opt){ const pts=resolveW(s[opt].w); const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); const name=esc(s.name+' ('+opt+')');
+  let x='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Nic\'s Ride Map" xmlns="http://www.topografix.com/GPX/1/1">\n<metadata><name>'+name+'</name></metadata>\n';
+  pts.forEach(p=>{ x+='<wpt lat="'+p[0].toFixed(5)+'" lon="'+p[1].toFixed(5)+'"><name>'+esc(p[2]||'')+'</name></wpt>\n'; });
+  x+='<rte><name>'+name+'</name>\n'; pts.forEach(p=>{ x+='<rtept lat="'+p[0].toFixed(5)+'" lon="'+p[1].toFixed(5)+'"><name>'+esc(p[2]||'')+'</name></rtept>\n'; }); x+='</rte>\n';
+  x+='<trk><name>'+name+'</name><trkseg>\n'; pts.forEach(p=>{ x+='<trkpt lat="'+p[0].toFixed(5)+'" lon="'+p[1].toFixed(5)+'"></trkpt>\n'; }); x+='</trkseg></trk>\n</gpx>\n'; return x; }
+function gpxFile(s,opt){ return new File([gpxText(s,opt)],(s.id+'_'+opt+'.gpx'),{type:'application/gpx+xml'}); }
+function gpx(s,opt){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([gpxText(s,opt)],{type:'application/gpx+xml'})); a.download=(s.id+'_'+opt+'.gpx'); document.body.appendChild(a); a.click(); a.remove(); }
+async function sendToFlow(s,opt,btn){ const f=gpxFile(s,opt);
+  if(navigator.canShare && navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:s.name}); btn.textContent='Sent. In the share sheet choose the Flow app.'; return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  gpx(s,opt); btn.textContent='GPX saved. Open it with the Flow app to import.'; }
 
 const explore=document.getElementById('explore');
 function drawExplore(){
@@ -422,7 +431,9 @@ function exploreDetail(s,opt){
   const ol=h('ol','wps',explore); resolveW(o.w).forEach(p=>h('li',null,ol,p[2]||''));
   const acts=h('div','acts',explore);
   const g=h('a','btn',acts,'Cycling directions in Google Maps'); g.href=gmapsUrl(o.w); g.target='_blank'; g.rel='noopener';
+  const fl=h('button','btn',acts,'Send to the Flow app'); fl.addEventListener('click',()=>sendToFlow(s,opt,fl));
   const d=h('button','btn',acts,'Download GPX'); d.addEventListener('click',()=>gpx(s,opt));
+  h('p','why',explore,'Send to the Flow app opens your phone\'s share sheet with the route file. Pick the Bosch eBike Flow app and it imports the route into Navigation, where you get the map and turn by turn directions on the bike. Flow works out the actual streets and paths between the waypoints.');
   h('p','why',explore,'Distance and time are estimates from the corridor length plus 12 percent for the real path. Check the Google Maps directions before you go.');
 }
 document.querySelectorAll('.chip[data-mode]').forEach(b=>b.addEventListener('click',()=>{ exploreMode=b.dataset.mode==='explore'; document.querySelectorAll('.chip[data-mode]').forEach(c=>c.setAttribute('aria-pressed',String(c===b)));
