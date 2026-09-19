@@ -57,7 +57,7 @@ git config credential.helper manager
 
 # ---- 3. sign in and test the push ---------------------------------------------
 Say 'Testing the push. A browser window will open once for you to sign in to GitHub.'
-git add bosch_dashboard.html bosch_ride_map.html
+git add bosch_dashboard.html bosch_ride_map.html bosch_status.json
 if (git status --porcelain) {
     git commit -q -m "Bosch ride refresh $(Get-Date -Format 'yyyy-MM-dd')"
 }

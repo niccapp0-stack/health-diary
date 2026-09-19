@@ -507,6 +507,16 @@ def main():
     (folder / "bosch_ride_map.html").write_text(mp, encoding="utf-8")
 
     dates = sorted(r["date"] for r in rides)
+    from datetime import datetime, timezone
+    status = {
+        "updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "rides": len(rides),
+        "km": round(sum(num(r, "distanceKm") or 0 for r in rides), 1),
+        "firstRide": dates[0],
+        "lastRide": dates[-1],
+        "withGps": len(tracks),
+    }
+    (folder / "bosch_status.json").write_text(json.dumps(status), encoding="utf-8")
     print(f"Built pages for {len(rides)} rides ({dates[0]} to {dates[-1]}), {len(tracks)} with GPS.")
     print(f"  {folder / 'bosch_dashboard.html'}")
     print(f"  {folder / 'bosch_ride_map.html'}")
@@ -638,6 +648,9 @@ svg .xh{stroke:var(--axis);stroke-width:1;pointer-events:none}
 .rstats span{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
 .rstats b{font-weight:600;font-variant-numeric:tabular-nums}
 @media (max-width:520px){.route{grid-template-columns:1fr}.route .mini{width:100%;height:auto}}
+body.embed h1{font-size:1.6rem}
+body.embed .sub{display:none}
+body.embed .wrap{padding-block:16px 48px}
 @media (prefers-reduced-motion:no-preference){.chip,.tog{transition:background .15s}}
 </style>
 
@@ -1026,6 +1039,7 @@ function renderAll(){
   card(eg,{id:'hs',size:'half',title:'Ride length',why:'How far a typical outing goes, in 5 km bands.',render:histChart,table:histTable});
   card(eg,{id:'hd',size:'half',title:'Hardest rides',why:'Ranked by climbing multiplied by your own power output.',render:hardChart,table:hardTable});
 }
+if(new URLSearchParams(location.search).get('embed')==='1') document.body.classList.add('embed');
 let initial='all'; try{ initial=localStorage.getItem('ridebook-range')||'all'; }catch(e){}
 if(!document.querySelector('.chip[data-range="'+initial+'"]')) initial='all';
 applyRange(initial);
@@ -1131,6 +1145,8 @@ main{flex:1;display:grid;grid-template-columns:1fr 360px;min-height:0}
 .acts{display:flex;flex-direction:column;gap:8px;margin:14px 0 8px}
 .btn{display:block;text-align:center;border:1px solid var(--ring);background:var(--ink);color:var(--surface);font:inherit;font-size:.92rem;padding:9px 12px;border-radius:8px;cursor:pointer;text-decoration:none}
 .btn:hover{opacity:.9}
+body.embed .top h1{font-size:1.1rem}
+body.embed .top .sub{display:none}
 @media (max-width:820px){
   main{grid-template-columns:1fr;grid-template-rows:55vh 1fr}
   .side{border-left:0;border-top:1px solid var(--ring)}
@@ -1400,7 +1416,11 @@ document.querySelectorAll('.chip[data-mode]').forEach(b=>b.addEventListener('cli
 /* ---------- year filter ---------- */
 document.querySelectorAll('.chip[data-year]').forEach(b=>b.addEventListener('click',()=>{ year=b.dataset.year; document.querySelectorAll('.chip[data-year]').forEach(c=>c.setAttribute('aria-pressed',String(c===b))); if(selected&&year!=='all'&&byId[selected].d.slice(0,4)!==year) selected=null; drawMap(); drawList(); drawSelection(); if(!selected) select(null); }));
 
+if(new URLSearchParams(location.search).get('embed')==='1') document.body.classList.add('embed');
+function setMode(mode){ const b=document.querySelector('.chip[data-mode="'+(mode==='explore'?'explore':'rides')+'"]'); if(b&&b.getAttribute('aria-pressed')!=='true') b.click(); }
+addEventListener('message',ev=>{ if(ev.data&&ev.data.mode) setMode(ev.data.mode); });
 drawMap(); drawList(); zoomHome();
+if(location.hash==='#explore') setMode('explore');
 let saved=null; try{ saved=localStorage.getItem('ridemap-sel'); }catch(e){}
 if(saved&&byId[saved]) select(saved,true);
 </script>
@@ -1448,7 +1468,7 @@ if ($LASTEXITCODE -ne 0) { Log "Ride pull failed (exit $LASTEXITCODE). Stopping.
 # ---- 4. push to GitHub when the folder is a git clone -----------------------
 if ($IsClone) {
     Push-Location $Folder
-    git add bosch_dashboard.html bosch_ride_map.html 2>&1 | Out-Null
+    git add bosch_dashboard.html bosch_ride_map.html bosch_status.json 2>&1 | Out-Null
     if (git status --porcelain) {
         git commit -q -m "Bosch ride refresh $(Get-Date -Format 'yyyy-MM-dd')" 2>&1 | ForEach-Object { Log "  $_" }
         git push origin main 2>&1 | ForEach-Object { Log "  $_" }
