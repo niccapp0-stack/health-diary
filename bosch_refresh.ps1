@@ -328,6 +328,22 @@ def num(r, c):
     return float(r[c]) if r.get(c, "") not in ("", None) else None
 
 
+PRIVACY_M = 400  # metres hidden around the start and end of every ride
+
+
+def metres(a, b):
+    return math.hypot((a[0] - b[0]) * 110570, (a[1] - b[1]) * 88000)
+
+
+def privacy_trim(p, zones):
+    """Drop every point within PRIVACY_M of the ride's own start and finish, and of the fixed zones."""
+    if len(p) < 3:
+        return []
+    centres = [p[0], p[-1]] + list(zones)
+    out = [q for q in p if all(metres(q, c) >= PRIVACY_M for c in centres)]
+    return out if len(out) >= 2 else []
+
+
 def load(folder: Path):
     rides = list(csv.DictReader((folder / "bosch_rides.csv").open(encoding="utf-8")))
     tracks = defaultdict(list)
@@ -340,7 +356,27 @@ def load(folder: Path):
                     float(r["elevM"]) if r["elevM"] else None,
                     float(r["speedKmh"] or 0), float(r["powerW"] or 0),
                 ))
-    return rides, tracks
+    raw_starts = [p[0] for p in tracks.values() if p]
+    home, zones = None, []
+    if raw_starts:
+        lat = sorted(q[0] for q in raw_starts)[len(raw_starts) // 2]
+        lon = sorted(q[1] for q in raw_starts)[len(raw_starts) // 2]
+        zones.append((lat, lon))
+        # any place where 4 or more rides begin is treated as a home zone too
+        seen = []
+        for s in raw_starts:
+            for z in seen:
+                if metres(s, z[0]) < 600:
+                    z[1] += 1
+                    break
+            else:
+                seen.append([s, 1])
+        zones += [z[0] for z in seen if z[1] >= 4]
+        name, hla, hlo = min(LANDMARKS, key=lambda l: metres((l[1], l[2]), (lat, lon)))
+        home = [hla, hlo, name]
+    tracks = {rid: privacy_trim(p, zones) for rid, p in tracks.items()}
+    tracks = {rid: p for rid, p in tracks.items() if p}
+    return rides, tracks, home
 
 
 def ride_records(rides):
@@ -434,7 +470,7 @@ def geo_data(tracks):
     }
 
 
-def map_data(records, tracks):
+def map_data(records, tracks, home):
     out = []
     for rec in records:
         p = tracks.get(rec["id"], [])
@@ -446,13 +482,13 @@ def map_data(records, tracks):
         m["pts"] = [[round(a, 5), round(b, 5), round(s / 1000, 2), None if h is None else round(h), round(v, 1), round(w)]
                     for a, b, s, h, v, w in pts]
         out.append(m)
-    return {"rides": out}
+    return {"rides": out, "home": home, "privacyM": PRIVACY_M}
 
 
 def main():
     folder = Path(sys.argv[1])
     tdir = Path(sys.argv[2]) if len(sys.argv) > 2 else folder
-    rides, tracks = load(folder)
+    rides, tracks, home = load(folder)
     if not rides:
         print("No rides found.")
         sys.exit(1)
@@ -467,7 +503,7 @@ def main():
     (folder / "bosch_dashboard.html").write_text(dash, encoding="utf-8")
 
     mp = (tdir / "ridemap_osm_template.html").read_text(encoding="utf-8-sig")
-    mp = mp.replace("__DATA__", js(map_data(records, tracks)))
+    mp = mp.replace("__DATA__", js(map_data(records, tracks, home)))
     (folder / "bosch_ride_map.html").write_text(mp, encoding="utf-8")
 
     dates = sorted(r["date"] for r in rides)
@@ -1169,8 +1205,8 @@ function drawSelection(){
   if(!selected) return; const r=byId[selected]; if(!r.hasGps) return;
   if(!lines[r.id]){ selLayer=L.polyline(latlngs(r),{color:SEL,weight:4.5,opacity:1}).addTo(map); }
   const s=r.pts[0], e=r.pts[r.pts.length-1];
-  startMk=L.circleMarker([s[0],s[1]],{radius:6,color:SEL,weight:3,fillColor:'#fff',fillOpacity:1}).addTo(map).bindTooltip('Start');
-  endMk=L.circleMarker([e[0],e[1]],{radius:6,color:'#fff',weight:2,fillColor:SEL,fillOpacity:1}).addTo(map).bindTooltip('Finish');
+  startMk=L.circleMarker([s[0],s[1]],{radius:6,color:SEL,weight:3,fillColor:'#fff',fillOpacity:1}).addTo(map).bindTooltip('Track starts here (privacy zone)');
+  endMk=L.circleMarker([e[0],e[1]],{radius:6,color:'#fff',weight:2,fillColor:SEL,fillOpacity:1}).addTo(map).bindTooltip('Track ends here (privacy zone)');
 }
 function zoomAll(){ const v=visible(); if(!v.length) return; map.fitBounds(L.latLngBounds(v.flatMap(latlngs)),{padding:[20,20]}); }
 function zoomHome(){ const v=visible(); if(!v.length) return; const starts=v.map(r=>r.pts[0]); const clat=median(starts.map(p=>p[0])), clon=median(starts.map(p=>p[1])); const near=v.filter(r=>Math.hypot((r.pts[0][0]-clat)*110.57,(r.pts[0][1]-clon)*88)<6); map.fitBounds(L.latLngBounds((near.length?near:v).flatMap(latlngs)),{padding:[20,20]}); }
@@ -1185,7 +1221,7 @@ function drawList(){
   document.getElementById('cnt').textContent=rs.length+' rides · '+fmt(rs.reduce((a,r)=>a+r.km,0))+' km';
   rs.forEach(r=>{ const b=h('button','ride'+(r.hasGps?'':' nogps'),list); b.id='ride-'+r.id.slice(0,8); b.setAttribute('aria-selected',String(selected===r.id)); h('span','d',b,dow(r.d)+' '+dmy(r.d)); h('span','k',b,fmt(r.km,1)+' km'); h('span','n',b,r.t+' · '+dur(r.dur)+' · '+fmt(r.up)+' m climb · '+fmt(r.pw)+' W');
     b.addEventListener('click',()=>select(r.id,true)); });
-  document.getElementById('sub').textContent=rides.filter(r=>r.hasGps).length+' of '+rides.length+' rides have a GPS track · '+dmy(rides[rides.length-1].d)+' to '+dmy(rides[0].d);
+  document.getElementById('sub').textContent=rides.filter(r=>r.hasGps).length+' of '+rides.length+' rides have a GPS track · '+dmy(rides[rides.length-1].d)+' to '+dmy(rides[0].d)+(DATA.privacyM?' · first and last '+DATA.privacyM+' m of every ride hidden':'');
 }
 function select(id,fit){
   if(id&&exploreMode){ exploreMode=false; explore.hidden=true; clearSuggestion(); curSug=null; document.querySelectorAll('.chip[data-mode]').forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.mode==='rides'))); }
@@ -1289,7 +1325,7 @@ const SUGGEST=[
 ];
 const SCEN='#1baf7a', DIR='#7c5cd6';
 const kmBetween=(a,b)=>Math.hypot((a[0]-b[0])*110.57,(a[1]-b[1])*88);
-function homePoint(){ const s=rides.filter(r=>r.hasGps).map(r=>r.pts[0]); return [median(s.map(p=>p[0])),median(s.map(p=>p[1])),'Home, your usual start']; }
+function homePoint(){ if(DATA.home) return [DATA.home[0],DATA.home[1],DATA.home[2]+', near your usual start']; const s=rides.filter(r=>r.hasGps).map(r=>r.pts[0]); return [median(s.map(p=>p[0])),median(s.map(p=>p[1])),'Home, your usual start']; }
 function resolveW(w){ const hm=homePoint(); return w.map(p=>p==='H'? hm : p); }
 function optKm(w){ const pts=resolveW(w); let d=0; for(let i=1;i<pts.length;i++) d+=kmBetween(pts[i-1],pts[i]); return Math.round(d*1.12); }
 function optTime(km,scenic){ const speed=scenic?19:21; const mins=Math.round(km/speed*60*1.15); const hh=Math.floor(mins/60), mm=mins%60; return (hh?hh+' h ':'')+mm+' min'; }
@@ -1412,7 +1448,7 @@ if ($LASTEXITCODE -ne 0) { Log "Ride pull failed (exit $LASTEXITCODE). Stopping.
 # ---- 4. push to GitHub when the folder is a git clone -----------------------
 if ($IsClone) {
     Push-Location $Folder
-    git add bosch_rides.csv bosch_tracks.csv bosch_dashboard.html bosch_ride_map.html 2>&1 | Out-Null
+    git add bosch_dashboard.html bosch_ride_map.html 2>&1 | Out-Null
     if (git status --porcelain) {
         git commit -q -m "Bosch ride refresh $(Get-Date -Format 'yyyy-MM-dd')" 2>&1 | ForEach-Object { Log "  $_" }
         git push origin main 2>&1 | ForEach-Object { Log "  $_" }
