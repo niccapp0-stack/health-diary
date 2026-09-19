@@ -1384,8 +1384,19 @@ if ($Install) {
     Log "Installed the nightly task 'Bosch ride refresh' (6:00 am daily, or as soon as the PC is next awake). Running the first refresh now."
 }
 
-# ---- 1. rides ----------------------------------------------------------------
+# ---- 0. pull the latest from GitHub first, so the nightly commit never collides ----
+$gitPaths = @("$env:ProgramFiles\Git\cmd", "${env:ProgramFiles(x86)}\Git\cmd", "$env:LOCALAPPDATA\Programs\Git\cmd")
+$env:Path = ($gitPaths -join ';') + ';' + $env:Path
+$IsClone = (Get-Command git -ErrorAction SilentlyContinue) -and (Test-Path (Join-Path $Folder '.git'))
 Log 'Refresh started'
+if ($IsClone) {
+    Push-Location $Folder
+    git pull -q --ff-only origin main 2>&1 | ForEach-Object { Log "  $_" }
+    if ($LASTEXITCODE -ne 0) { Log 'Could not pull from GitHub (continuing with local files).' }
+    Pop-Location
+}
+
+# ---- 1. rides ----------------------------------------------------------------
 $RidesCsv  = Join-Path $Folder 'bosch_rides.csv'
 $TracksCsv = Join-Path $Folder 'bosch_tracks.csv'
 $loginArg = if ($Install -or $Login) { @() } else { @('--no-login') }
@@ -1399,16 +1410,16 @@ if ($LASTEXITCODE -ne 0) { Log "Ride pull failed (exit $LASTEXITCODE). Stopping.
 & uvx --from bosch-flow-mcp python (Join-Path $Work 'bosch_build.py') $Folder $Work 2>&1 | ForEach-Object { Log "  $_" }
 
 # ---- 4. push to GitHub when the folder is a git clone -----------------------
-if ((Get-Command git -ErrorAction SilentlyContinue) -and (Test-Path (Join-Path $Folder '.git'))) {
+if ($IsClone) {
     Push-Location $Folder
     git add bosch_rides.csv bosch_tracks.csv bosch_dashboard.html bosch_ride_map.html 2>&1 | Out-Null
     if (git status --porcelain) {
         git commit -q -m "Bosch ride refresh $(Get-Date -Format 'yyyy-MM-dd')" 2>&1 | ForEach-Object { Log "  $_" }
-        git push 2>&1 | ForEach-Object { Log "  $_" }
-        Log 'Pushed to GitHub.'
+        git push origin main 2>&1 | ForEach-Object { Log "  $_" }
+        if ($LASTEXITCODE -eq 0) { Log 'Pushed to GitHub.' } else { Log 'Push to GitHub failed. Run bosch_github_setup.ps1 again to sign in.' }
     } else { Log 'Nothing new to push to GitHub.' }
     Pop-Location
-} else { Log 'GitHub push skipped (folder is not a git clone). Pages are up to date locally.' }
+} else { Log 'GitHub push skipped (folder is not a git clone). Run bosch_github_setup.ps1 once to enable it.' }
 
 Log 'Refresh finished'
 if ($Install -or $Login) { Start-Process (Join-Path $Folder 'bosch_dashboard.html') }
