@@ -592,6 +592,8 @@ section.block{margin-bottom:48px}
 .tog[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .viz svg{display:block;width:100%;height:auto;overflow:visible}
 .viz{position:relative}
+#where-grid .viz{overflow:hidden}
+#where-grid .viz svg{overflow:hidden}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--ink-2);margin:6px 0 2px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:2px}
@@ -696,7 +698,7 @@ body.embed .wrap{padding-block:16px 48px}
     <div class="grid" id="effort-grid"></div>
   </section>
 
-  <p class="foot">Source: Bosch eBike Flow ride summaries pulled through the rider activity API. Heart rate is not recorded because the bike has no sensor. Climbing is metres of elevation gain. Times are Melbourne local time.</p>
+  <p class="foot">build 19 Sep 2026 v4. Source: Bosch eBike Flow ride summaries pulled through the rider activity API. Heart rate is not recorded because the bike has no sensor. Climbing is metres of elevation gain. Times are Melbourne local time.</p>
 </div>
 <div class="tip" id="tip" hidden></div>
 
@@ -750,6 +752,8 @@ document.addEventListener('pointermove',ev=>{ if(!tip.hidden && !(ev.target.clos
 document.addEventListener('pointerdown',ev=>{ if(!(ev.target.closest && ev.target.closest('.hit,.seg,.cell,.bar'))) hideTip(); },{passive:true});
 addEventListener('scroll',hideTip,{passive:true});
 document.addEventListener('pointerleave',hideTip);
+document.addEventListener('touchstart',ev=>{ if(!(ev.target.closest && ev.target.closest('.hit,.seg,.cell,.bar'))) hideTip(); },{passive:true});
+let tipTimer=null; new MutationObserver(()=>{ if(!tip.hidden && matchMedia('(hover: none)').matches){ clearTimeout(tipTimer); tipTimer=setTimeout(hideTip,2500); } }).observe(tip,{attributes:true,attributeFilter:['hidden']});
 
 function guardSvg(svg){ svg.addEventListener('pointerleave',hideTip); return svg; }
 /* ---------- card ---------- */
@@ -1080,7 +1084,9 @@ h1,h2,.num{font-family:"Barlow Semi Condensed","Source Sans 3",system-ui,sans-se
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .chip:focus-visible,.ride:focus-visible{outline:2px solid var(--route);outline-offset:2px}
 main{flex:1;display:grid;grid-template-columns:1fr 360px;min-height:0}
-#map{min-height:0;background:#dfe6dc}
+#map{min-height:0;background:#dfe6dc;position:relative;overflow:hidden;z-index:0}
+.leaflet-tooltip{pointer-events:none}
+.stamp{position:absolute;left:8px;bottom:22px;z-index:500;font-size:10px;color:#545b57;background:rgba(252,252,251,.8);padding:1px 5px;border-radius:4px;pointer-events:none}
 .leaflet-container{font:inherit}
 .leaflet-control-attribution{font-size:10px}
 .ctlbox{display:flex;flex-direction:column;gap:4px}
@@ -1169,7 +1175,7 @@ body.embed .top .sub{display:none}
   </div>
 </header>
 <main>
-  <div id="map"></div>
+  <div id="map"><div class="stamp">build 19 Sep 2026 v4</div></div>
   <aside class="side">
     <div class="head"><h2 id="sidetitle">Rides</h2><div class="cnt" id="cnt"></div>
       <div class="mode" role="group" aria-label="Panel"><button class="chip" data-mode="rides" aria-pressed="true" id="m-rides">Rides</button><button class="chip" data-mode="explore" aria-pressed="false" id="m-explore">Explore</button></div></div>
@@ -1208,13 +1214,14 @@ const ViewCtl=L.Control.extend({onAdd(){ const d=L.DomUtil.create('div','ctlbox'
 new ViewCtl({position:'topleft'}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
 
+const TOUCH=matchMedia('(hover: none)').matches;
 let year='all', selected=null; const lines={}; let selLayer=null, startMk=null, endMk=null;
 function visible(){ return rides.filter(r=>r.hasGps && (year==='all'||r.d.slice(0,4)===year)); }
 function latlngs(r){ return r.pts.map(p=>[p[0],p[1]]); }
 function drawMap(){
   Object.values(lines).forEach(l=>map.removeLayer(l)); for(const k in lines) delete lines[k];
   visible().forEach(r=>{ const l=L.polyline(latlngs(r),{color:ROUTE,weight:2.5,opacity:.6}).addTo(map); lines[r.id]=l;
-    l.bindTooltip('<b>'+dow(r.d)+' '+dmy(r.d)+'</b><br>'+fmt(r.km,1)+' km · '+fmt(r.up)+' m climb · '+fmt(r.pw)+' W',{sticky:true});
+    if(!TOUCH) l.bindTooltip('<b>'+dow(r.d)+' '+dmy(r.d)+'</b><br>'+fmt(r.km,1)+' km · '+fmt(r.up)+' m climb · '+fmt(r.pw)+' W',{sticky:true});
     l.on('mouseover',()=>{ if(selected!==r.id) l.setStyle({weight:4,opacity:1}); });
     l.on('mouseout',()=>{ if(selected!==r.id) l.setStyle({weight:2.5,opacity:selected?.35:.6}); });
     l.on('click',ev=>{ L.DomEvent.stopPropagation(ev); l.closeTooltip(); select(r.id,false); }); });
@@ -1242,6 +1249,8 @@ map.on('click movestart zoomstart',closeAllTips);
 document.addEventListener('pointerdown',ev=>{ if(!(ev.target.closest && ev.target.closest('.prof svg, .leaflet-interactive'))) closeAllTips(); },{passive:true});
 document.addEventListener('pointermove',ev=>{ if(!tip.hidden && !(ev.target.closest && ev.target.closest('.prof svg'))) hideTip(); },{passive:true});
 addEventListener('scroll',hideTip,{passive:true}); document.querySelector('.side').addEventListener('scroll',hideTip,{passive:true,capture:true});
+document.addEventListener('touchstart',ev=>{ if(!(ev.target.closest && ev.target.closest('.prof svg'))) closeAllTips(); },{passive:true});
+let tipTimer=null; const _show=tip; new MutationObserver(()=>{ if(!tip.hidden && TOUCH){ clearTimeout(tipTimer); tipTimer=setTimeout(hideTip,2500); } }).observe(tip,{attributes:true,attributeFilter:['hidden']});
 addEventListener('resize',()=>map.invalidateSize());
 function drawList(){
   list.replaceChildren(); const rs=rides.filter(r=>year==='all'||r.d.slice(0,4)===year);

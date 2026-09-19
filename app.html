@@ -83,6 +83,7 @@ nav button:focus-visible{outline:2px solid var(--route);outline-offset:-2px}
         <h2>How it stays current</h2>
         <p>Your PC pulls new rides from Bosch every morning and publishes them here. Tap Refresh after a ride day, or just reopen the app.</p>
         <p>The first and last 400 m of every ride are hidden on the map, so your home never appears.</p>
+        <p id="stamp" style="font-size:.8rem;color:var(--muted)">App build 19 Sep 2026 v4</p>
       </div>
     </div>
   </section>
@@ -118,7 +119,7 @@ async function status(){
     document.getElementById('upd').textContent='Last checked just now';
   }catch(e){ document.getElementById('sub').textContent='Could not reach the latest data. Showing what is saved on this device.'; }
 }
-document.getElementById('reload').addEventListener('click',async()=>{ document.getElementById('upd').textContent='Checking…'; await status(); ['f-dash','f-map'].forEach(id=>{ const f=document.getElementById(id); if(f.src){ f.dataset.ready=''; f.src=f.dataset.src+'&t='+Date.now(); } }); });
+document.getElementById('reload').addEventListener('click',async()=>{ document.getElementById('upd').textContent='Checking…'; try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){} await status(); ['f-dash','f-map'].forEach(id=>{ const f=document.getElementById(id); if(f.src){ f.dataset.ready=''; f.src=f.dataset.src+'&t='+Date.now(); } }); });
 function setOnline(){ document.getElementById('offline').classList.toggle('on',!navigator.onLine); }
 addEventListener('online',setOnline); addEventListener('offline',setOnline); setOnline();
 let deferred=null;
