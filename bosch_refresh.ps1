@@ -1463,6 +1463,19 @@ if ($IsClone) {
     Pop-Location
 }
 
+# ---- 0b. use the repo's own templates and builder when present, and keep the scheduled copy current ----
+$SiteDir = Join-Path $Folder 'site'
+if (Test-Path (Join-Path $SiteDir 'bosch_build.py')) {
+    Copy-Item -Path (Join-Path $SiteDir 'bosch_build.py'), (Join-Path $SiteDir 'ridebook_template.html'), (Join-Path $SiteDir 'ridemap_osm_template.html') -Destination $Work -Force
+    Log 'Using the templates and builder from the repo folder.'
+}
+$RepoScript = Join-Path $Folder 'bosch_refresh.ps1'
+$SelfCopy   = Join-Path $Work 'bosch_refresh.ps1'
+if ((Test-Path $RepoScript) -and (Test-Path $SelfCopy) -and ((Get-FileHash $RepoScript).Hash -ne (Get-FileHash $SelfCopy).Hash)) {
+    Copy-Item -Path $RepoScript -Destination $SelfCopy -Force
+    Log 'Updated the scheduled copy of this script from the repo.'
+}
+
 # ---- 1. rides ----------------------------------------------------------------
 $RidesCsv  = Join-Path $Folder 'bosch_rides.csv'
 $TracksCsv = Join-Path $Folder 'bosch_tracks.csv'
