@@ -1,5 +1,5 @@
 /* Ride Book service worker: keeps the app usable offline and fetches fresh pages when online. */
-const VERSION = 'ridebook-v1';
+const VERSION = 'ridebook-v4';
 const SHELL = [
   './app.html',
   './manifest.webmanifest',
@@ -36,7 +36,7 @@ self.addEventListener('fetch', event => {
   if (url.origin === self.location.origin || /cdnjs\.cloudflare\.com|fonts\.(googleapis|gstatic)\.com/.test(url.host)) {
     // network first, fall back to the saved copy
     event.respondWith(
-      fetch(req).then(res => { if (res && res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(key, copy)); } return res; })
+      fetch(req, { cache: 'no-cache' }).then(res => { if (res && res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(key, copy)); } return res; })
         .catch(() => caches.match(key).then(hit => hit || (url.pathname.endsWith('app.html') ? caches.match('./app.html') : undefined)))
     );
   }
