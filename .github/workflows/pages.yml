@@ -26,10 +26,12 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Re-render the ride pages with the current templates
+        run: python3 site/render.py . _site
       - name: Package the site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
