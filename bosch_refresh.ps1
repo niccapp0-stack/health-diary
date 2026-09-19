@@ -317,6 +317,10 @@ LANDMARKS = [
     ("Frankston", -38.1414, 145.1225), ("Sorrento", -38.3395, 144.7427), ("Woodend", -37.3574, 144.5286),
     ("Lilydale", -37.7565, 145.3510), ("Yarra Junction", -37.7811, 145.6144), ("Warburton", -37.7529, 145.6906),
     ("Eltham", -37.7150, 145.1490), ("Ringwood", -37.8140, 145.2290),
+    ("Footscray", -37.7990, 144.9020), ("Maribyrnong", -37.7740, 144.8930), ("Yarraville", -37.8160, 144.8900),
+    ("Altona", -37.8690, 144.8300), ("Werribee", -37.9000, 144.6600), ("Essendon", -37.7550, 144.9150),
+    ("Brunswick", -37.7700, 144.9600), ("Greensborough", -37.7050, 145.1030), ("Diamond Creek", -37.6730, 145.1560),
+    ("Sunshine", -37.7800, 144.8300), ("Docklands", -37.8170, 144.9450),
 ]
 
 
@@ -698,7 +702,7 @@ body.embed .wrap{padding-block:16px 48px}
     <div class="grid" id="effort-grid"></div>
   </section>
 
-  <p class="foot">build 19 Sep 2026 v4. Source: Bosch eBike Flow ride summaries pulled through the rider activity API. Heart rate is not recorded because the bike has no sensor. Climbing is metres of elevation gain. Times are Melbourne local time.</p>
+  <p class="foot">build 19 Sep 2026 v5. Source: Bosch eBike Flow ride summaries pulled through the rider activity API. Heart rate is not recorded because the bike has no sensor. Climbing is metres of elevation gain. Times are Melbourne local time.</p>
 </div>
 <div class="tip" id="tip" hidden></div>
 
@@ -1149,7 +1153,7 @@ main{flex:1;display:grid;grid-template-columns:1fr 360px;min-height:0}
 .sug .d{font-weight:600}
 .sug .n{color:var(--ink-2);font-size:.85rem;grid-column:1/-1}
 .sug .k{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600;text-align:right;white-space:nowrap}
-.opts{display:flex;gap:6px;margin:6px 0 12px}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
 .opts .chip[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:#fff}
 .wps{margin:0;padding-left:20px;font-size:.9rem}
 .wps li{margin:2px 0}
@@ -1175,7 +1179,7 @@ body.embed .top .sub{display:none}
   </div>
 </header>
 <main>
-  <div id="map"><div class="stamp">build 19 Sep 2026 v4</div></div>
+  <div id="map"><div class="stamp">build 19 Sep 2026 v5</div></div>
   <aside class="side">
     <div class="head"><h2 id="sidetitle">Rides</h2><div class="cnt" id="cnt"></div>
       <div class="mode" role="group" aria-label="Panel"><button class="chip" data-mode="rides" aria-pressed="true" id="m-rides">Rides</button><button class="chip" data-mode="explore" aria-pressed="false" id="m-explore">Explore</button></div></div>
@@ -1319,45 +1323,97 @@ const TRAILS=[
  {n:'Djerring Trail',w:[[-37.8780,145.0430],[-37.8870,145.0580],[-37.8930,145.0800],[-37.9000,145.0900],[-37.9250,145.1200],[-37.9500,145.1520],[-37.9880,145.2150]]},
  {n:'Box Hill to Ringwood Rail Trail',w:[[-37.8190,145.1220],[-37.8190,145.1500],[-37.8200,145.1760],[-37.8180,145.1930],[-37.8150,145.2290]]},
  {n:'Lilydale to Warburton Rail Trail',w:[[-37.7570,145.3540],[-37.7900,145.3830],[-37.7800,145.4260],[-37.7750,145.4640],[-37.7770,145.5350],[-37.7800,145.5730],[-37.7810,145.6140],[-37.7530,145.6900]]},
+
+ {n:'Maribyrnong River Trail',w:[[-37.8190,144.9060],[-37.7990,144.9020],[-37.7740,144.8930],[-37.7600,144.8650],[-37.7350,144.8330]]},
+ {n:'Moonee Ponds Creek Trail',w:[[-37.8170,144.9450],[-37.7900,144.9350],[-37.7550,144.9150],[-37.7320,144.9200],[-37.6900,144.8950]]},
+ {n:'Upfield Bike Path',w:[[-37.8050,144.9450],[-37.7700,144.9600],[-37.7420,144.9640],[-37.7100,144.9600],[-37.6700,144.9550]]},
+ {n:'Hobsons Bay Coastal Trail',w:[[-37.8430,144.8840],[-37.8680,144.8930],[-37.8690,144.8300],[-37.8800,144.7950],[-37.9200,144.7800]]},
+ {n:'Federation Trail',w:[[-37.8280,144.8560],[-37.8650,144.7700],[-37.8830,144.7000],[-37.9000,144.6600]]},
+ {n:'Werribee River Trail',w:[[-37.9000,144.6600],[-37.9350,144.6650],[-37.9700,144.6800]]},
+ {n:'Kororoit Creek Trail',w:[[-37.8600,144.8400],[-37.8200,144.8400],[-37.7800,144.8300]]},
+ {n:'Plenty River Trail',w:[[-37.7300,145.1150],[-37.7050,145.1030],[-37.6700,145.0800]]},
+ {n:'Diamond Creek Trail',w:[[-37.7160,145.1500],[-37.6730,145.1560],[-37.6400,145.1930]]},
 ];
 /* Waypoints are corridor markers, not turn by turn. 'H' is replaced by your usual start point. */
 const SUGGEST=[
- {id:'bay',name:'Bay Trail south to Mordialloc',target:'Bay Trail',
+ {id:'bay',region:'South',name:'Bay Trail south to Mordialloc',target:'Bay Trail',
   blurb:'You have ridden the bay as far as Brighton a handful of times. Everything south of there is new: the beach boxes, Sandringham, the Black Rock cliffs and the long flat run to Mordialloc.',
   scenic:{km:null,flat:true,follows:'Back streets to Elwood, then the Bay Trail the whole way south. Home via quiet Bentleigh and Caulfield streets.',surface:'Sealed shared path along the foreshore, a few short on road sections around Sandringham.',
    w:['H',[-37.8620,145.0300,'Malvern back streets'],[-37.8730,145.0250,'Caulfield Park'],[-37.8850,145.0040,'Elsternwick'],[-37.8830,144.9800,'Elwood beach, join the Bay Trail'],[-37.9180,144.9860,'Brighton beach boxes'],[-37.9520,145.0030,'Sandringham'],[-37.9730,145.0140,'Black Rock, Half Moon Bay'],[-37.9840,145.0300,'Beaumaris'],[-38.0000,145.0600,'Mentone'],[-38.0060,145.0870,'Mordialloc pier, turn for home'],[-37.9670,145.0540,'Cheltenham back streets'],[-37.9425,145.0580,'Moorabbin'],[-37.9180,145.0350,'Bentleigh'],[-37.8950,145.0300,'Caulfield South'],[-37.8770,145.0500,'Malvern East'],'H']},
   direct:{km:null,flat:true,follows:'Back streets to Elwood, Bay Trail to Black Rock, and back the same way.',surface:'Sealed shared path and quiet streets.',
    w:['H',[-37.8620,145.0300,'Malvern back streets'],[-37.8730,145.0250,'Caulfield Park'],[-37.8850,145.0040,'Elsternwick'],[-37.8830,144.9800,'Elwood beach, join the Bay Trail'],[-37.9180,144.9860,'Brighton'],[-37.9520,145.0030,'Sandringham'],[-37.9730,145.0140,'Black Rock, turn around'],[-37.9520,145.0030,'Sandringham'],[-37.8830,144.9800,'Elwood'],[-37.8850,145.0040,'Elsternwick'],[-37.8730,145.0250,'Caulfield Park'],'H']}},
- {id:'dandy',name:'Dandenong Creek Trail loop',target:'Dandenong Creek Trail',
+ {id:'dandy',region:'East',name:'Dandenong Creek Trail loop',target:'Dandenong Creek Trail',
   blurb:'Your least ridden big trail. Out along Scotchmans Creek to Jells Park, then down Dandenong Creek through wetlands and parkland, and home on the Djerring Trail beside the railway.',
   scenic:{km:null,flat:true,follows:'Gardiners Creek Trail, Scotchmans Creek Trail, Dandenong Creek Trail south to Dandenong, Djerring Trail west, Anniversary Trail home.',surface:'Sealed shared paths almost the whole way. A long day, take food.',
    w:['H',[-37.8740,145.0790,'Holmesglen, leave Gardiners Creek'],[-37.8860,145.0960,'Chadstone, Scotchmans Creek Trail'],[-37.8780,145.1260,'Mount Waverley'],[-37.8800,145.1650,'Glen Waverley'],[-37.8870,145.1960,'Jells Park lake'],[-37.9300,145.2200,'Rowville, Dandenong Creek Trail'],[-37.9880,145.2150,'Dandenong, join the Djerring Trail'],[-37.9500,145.1520,'Springvale'],[-37.9250,145.1200,'Clayton'],[-37.9000,145.0900,'Oakleigh'],[-37.8930,145.0800,'Hughesdale, Anniversary Trail'],'H']},
   direct:{km:null,flat:true,follows:'Gardiners Creek Trail and Scotchmans Creek Trail to Jells Park, back the same way.',surface:'Sealed shared paths.',
    w:['H',[-37.8740,145.0790,'Holmesglen'],[-37.8860,145.0960,'Chadstone, Scotchmans Creek Trail'],[-37.8780,145.1260,'Mount Waverley'],[-37.8800,145.1650,'Glen Waverley'],[-37.8870,145.1960,'Jells Park lake, turn around'],[-37.8800,145.1650,'Glen Waverley'],[-37.8780,145.1260,'Mount Waverley'],[-37.8860,145.0960,'Chadstone'],[-37.8740,145.0790,'Holmesglen'],'H']}},
- {id:'koonung',name:'Koonung Creek and the rail trail to Ringwood',target:'Koonung Creek Trail',
+ {id:'koonung',region:'East',name:'Koonung Creek and the rail trail to Ringwood',target:'Koonung Creek Trail',
   blurb:'Two trails you have barely touched, joined into a loop. North on the Anniversary Trail, along the Yarra to Bulleen, east beside Koonung Creek, then home on the Box Hill to Ringwood rail trail.',
   scenic:{km:null,flat:false,follows:'Anniversary Trail, Main Yarra Trail, Koonung Creek Trail to Springvale Road, Box Hill to Ringwood Rail Trail, Surrey Hills back streets.',surface:'Sealed paths, some short hills beside the freeway at Doncaster.',
    w:['H',[-37.8330,145.0700,'Camberwell, Anniversary Trail'],[-37.8120,145.0620,'Deepdene'],[-37.7960,145.0500,'Kew East'],[-37.7700,145.0750,'Bulleen, Banksia Park'],[-37.7900,145.1150,'Doncaster, Koonung Creek Trail'],[-37.8020,145.1250,'Box Hill North'],[-37.8050,145.1500,'Blackburn North'],[-37.8080,145.1700,'Springvale Road'],[-37.8200,145.1760,'Nunawading, rail trail'],[-37.8150,145.2290,'Ringwood, turn for home'],[-37.8190,145.1500,'Blackburn'],[-37.8190,145.1220,'Box Hill'],[-37.8250,145.1000,'Surrey Hills back streets'],[-37.8330,145.0700,'Camberwell'],'H']},
   direct:{km:null,flat:false,follows:'Anniversary Trail to Camberwell, quiet streets through Canterbury and Mont Albert to Box Hill, rail trail to Ringwood and back.',surface:'Sealed paths and back streets.',
    w:['H',[-37.8330,145.0700,'Camberwell'],[-37.8240,145.0850,'Canterbury'],[-37.8200,145.1050,'Mont Albert back streets'],[-37.8190,145.1220,'Box Hill, rail trail'],[-37.8200,145.1760,'Nunawading'],[-37.8150,145.2290,'Ringwood, turn around'],[-37.8200,145.1760,'Nunawading'],[-37.8190,145.1220,'Box Hill'],[-37.8200,145.1050,'Mont Albert'],[-37.8330,145.0700,'Camberwell'],'H']}},
- {id:'yarraeast',name:'Main Yarra Trail east to Westerfolds and Eltham',target:'Main Yarra Trail',
+ {id:'yarraeast',region:'North east',name:'Main Yarra Trail east to Westerfolds and Eltham',target:'Main Yarra Trail',
   blurb:'You ride the Yarra to Heidelberg often but stop there. The trail keeps going through Banyule Flats and Westerfolds Park to Eltham, the wildest stretch of river in the suburbs.',
   scenic:{km:null,flat:false,follows:'Gardiners Creek Trail, Main Yarra Trail all the way to Eltham Lower Park, back to Fairfield, Anniversary Trail home.',surface:'Sealed path with a few gravel sections and short climbs past Templestowe.',
    w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.7960,145.0100,'Yarra Bend'],[-37.7820,145.0180,'Fairfield'],[-37.7680,145.0400,'Ivanhoe'],[-37.7560,145.0800,'Heidelberg'],[-37.7500,145.0950,'Banyule Flats'],[-37.7500,145.1300,'Westerfolds Park'],[-37.7300,145.1400,'Eltham Lower Park, turn around'],[-37.7500,145.1300,'Westerfolds Park'],[-37.7560,145.0800,'Heidelberg'],[-37.7820,145.0180,'Fairfield, Anniversary Trail'],[-37.7960,145.0500,'Kew East'],[-37.8330,145.0700,'Camberwell'],'H']},
   direct:{km:null,flat:false,follows:'Anniversary Trail north, join the Yarra at the Burke Road bridge, east to Westerfolds Park and back.',surface:'Sealed path.',
    w:['H',[-37.8330,145.0700,'Camberwell'],[-37.7960,145.0500,'Kew East'],[-37.7850,145.0550,'Burke Road bridge, Main Yarra Trail'],[-37.7560,145.0800,'Heidelberg'],[-37.7500,145.1300,'Westerfolds Park, turn around'],[-37.7560,145.0800,'Heidelberg'],[-37.7850,145.0550,'Burke Road bridge'],[-37.7960,145.0500,'Kew East'],[-37.8330,145.0700,'Camberwell'],'H']}},
- {id:'city',name:'Capital City Trail, the western half',target:'Capital City Trail',
+ {id:'city',region:'City',name:'Capital City Trail, the western half',target:'Capital City Trail',
   blurb:'You know the river into town. The other side of the loop, Docklands, Royal Park and Princes Park, is the part you have not done.',
   scenic:{km:null,flat:true,follows:'Gardiners Creek and Main Yarra trails to Southbank, Capital City Trail through Docklands, Royal Park, Princes Park and Merri Creek to Dights Falls, Main Yarra Trail home.',surface:'Sealed shared paths, busy near Southbank on weekends.',
    w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank promenade'],[-37.8170,144.9450,'Docklands'],[-37.7900,144.9500,'Royal Park'],[-37.7830,144.9680,'Princes Park'],[-37.7800,144.9900,'Rushall, Merri Creek'],[-37.7960,145.0070,'Dights Falls'],[-37.8030,145.0030,'Abbotsford'],[-37.8285,145.0060,'Burnley'],'H']},
   direct:{km:null,flat:true,follows:'Gardiners Creek and Main Yarra trails to Southbank and Docklands, back the same way.',surface:'Sealed shared paths.',
    w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8170,144.9450,'Docklands, turn around'],[-37.8210,144.9640,'Southbank'],[-37.8285,145.0060,'Burnley'],'H']}},
- {id:'warby',name:'Lilydale to Warburton Rail Trail, from the Lilydale end',target:'Lilydale to Warburton Rail Trail',
+ {id:'warby',region:'Day trip',name:'Lilydale to Warburton Rail Trail, from the Lilydale end',target:'Lilydale to Warburton Rail Trail',
   blurb:'You have done the Warburton end. Take the bike on the train to Lilydale and ride the western half through Mount Evelyn, Wandin and Seville, which you have never seen.',
   scenic:{km:null,flat:false,follows:'The rail trail from Lilydale station all the way to Warburton and back. Gentle climb to Mount Evelyn, then mostly downhill to the Yarra.',surface:'Compacted gravel, fine on the eBike. No cars at all.',
    w:[[-37.7570,145.3540,'Lilydale station, bikes on the train'],[-37.7900,145.3830,'Mount Evelyn'],[-37.7800,145.4260,'Wandin'],[-37.7750,145.4640,'Seville'],[-37.7770,145.5350,'Woori Yallock'],[-37.7800,145.5730,'Launching Place'],[-37.7810,145.6140,'Yarra Junction'],[-37.7530,145.6900,'Warburton, turn around'],[-37.7810,145.6140,'Yarra Junction'],[-37.7770,145.5350,'Woori Yallock'],[-37.7750,145.4640,'Seville'],[-37.7900,145.3830,'Mount Evelyn'],[-37.7570,145.3540,'Lilydale station']]},
   direct:{km:null,flat:false,follows:'Lilydale to Woori Yallock and back, the half you have not ridden.',surface:'Compacted gravel rail trail.',
    w:[[-37.7570,145.3540,'Lilydale station, bikes on the train'],[-37.7900,145.3830,'Mount Evelyn'],[-37.7800,145.4260,'Wandin'],[-37.7750,145.4640,'Seville'],[-37.7770,145.5350,'Woori Yallock, turn around'],[-37.7750,145.4640,'Seville'],[-37.7900,145.3830,'Mount Evelyn'],[-37.7570,145.3540,'Lilydale station']]}},
+ {id:'maribyrnong',region:'West',name:'Maribyrnong River to Brimbank Park',target:'Maribyrnong River Trail',
+  blurb:'The big western river you have never ridden. Through town, under the freeway at Footscray, then upstream past Highpoint and the Avondale Heights cliffs to the parkland at Brimbank.',
+  scenic:{km:null,flat:false,follows:'Gardiners Creek and Main Yarra trails to Docklands, the Footscray Road path, then the Maribyrnong River Trail all the way to Brimbank Park and back.',surface:'Sealed shared paths. Two short steep pinches at Avondale Heights.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8170,144.9450,'Docklands'],[-37.8100,144.9350,'Footscray Road path'],[-37.7990,144.9020,'Footscray Park, Maribyrnong River Trail'],[-37.7740,144.8930,'Pipemakers Park, Maribyrnong'],[-37.7600,144.8650,'Avondale Heights'],[-37.7350,144.8330,'Brimbank Park, turn around'],[-37.7740,144.8930,'Maribyrnong'],[-37.7990,144.9020,'Footscray'],[-37.8170,144.9450,'Docklands'],[-37.8285,145.0060,'Burnley'],'H']},
+  direct:{km:null,flat:true,follows:'Same way in to Footscray, up the river to Highpoint and back.',surface:'Sealed shared paths.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8170,144.9450,'Docklands'],[-37.7990,144.9020,'Footscray Park'],[-37.7740,144.8930,'Pipemakers Park, turn around'],[-37.7990,144.9020,'Footscray'],[-37.8170,144.9450,'Docklands'],[-37.8285,145.0060,'Burnley'],'H']}},
+ {id:'hobsons',region:'South west',name:'Hobsons Bay coast: Williamstown to Altona',target:'Hobsons Bay Coastal Trail',
+  blurb:'The other side of the bay. Beaches, the Williamstown foreshore and the Altona coastal wetlands, with a view back across the water to the city.',
+  scenic:{km:null,flat:true,follows:'Through town and Docklands, the Footscray Road path to Yarraville, then the Hobsons Bay Coastal Trail from Williamstown to Altona Coastal Park and back.',surface:'Sealed foreshore paths, one gravel section through the coastal park.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8170,144.9450,'Docklands'],[-37.8160,144.8900,'Yarraville'],[-37.8430,144.8840,'Newport'],[-37.8680,144.8930,'Williamstown beach'],[-37.8690,144.8300,'Altona beach'],[-37.8800,144.7950,'Altona Coastal Park, turn around'],[-37.8680,144.8930,'Williamstown'],[-37.8160,144.8900,'Yarraville'],[-37.8170,144.9450,'Docklands'],[-37.8285,145.0060,'Burnley'],'H']},
+  direct:{km:null,flat:true,train:'Williamstown',follows:'Take the bike on the train to Williamstown, ride the coastal trail to Altona beach and back to the station.',surface:'Sealed foreshore path.',
+   w:[[-37.8600,144.8990,'Williamstown station, bikes on the train'],[-37.8680,144.8930,'Williamstown beach'],[-37.8690,144.8300,'Altona beach, turn around'],[-37.8680,144.8930,'Williamstown beach'],[-37.8600,144.8990,'Williamstown station']]}},
+ {id:'federation',region:'West',name:'Federation Trail to Werribee',target:'Federation Trail',
+  blurb:'A long flat run west along the old sewer aqueduct, car free the whole way, finishing on the Werribee River. Train out and train back keeps it a half day.',
+  scenic:{km:null,flat:true,train:'Yarraville',follows:'Train to Yarraville, Federation Trail to Werribee, then the Werribee River Trail south to the beach and back to Werribee station.',surface:'Sealed paths, exposed and windy, take water.',
+   w:[[-37.8160,144.8900,'Yarraville station, bikes on the train'],[-37.8280,144.8560,'Brooklyn, start of the Federation Trail'],[-37.8650,144.7700,'Laverton'],[-37.8830,144.7000,'Hoppers Crossing'],[-37.9000,144.6600,'Werribee, river trail'],[-37.9700,144.6800,'Werribee South beach, turn around'],[-37.9000,144.6600,'Werribee station, train home']]},
+  direct:{km:null,flat:true,train:'Yarraville',follows:'Train to Yarraville, Federation Trail to Werribee, train home.',surface:'Sealed path.',
+   w:[[-37.8160,144.8900,'Yarraville station, bikes on the train'],[-37.8280,144.8560,'Brooklyn, start of the Federation Trail'],[-37.8650,144.7700,'Laverton'],[-37.8830,144.7000,'Hoppers Crossing'],[-37.9000,144.6600,'Werribee station, train home']]}},
+ {id:'pointcook',region:'South west',name:'Point Cook Coastal Park',target:'Hobsons Bay Coastal Trail',
+  blurb:'Wetlands, birdlife and open coast at the far south west of the bay, reached by a short train ride. Quiet and flat.',
+  scenic:{km:null,flat:true,train:'Williams Landing',follows:'Train to Williams Landing, Skeleton Creek path to Point Cook, the coastal park loop, then east along the Hobsons Bay Coastal Trail to Altona and the train home.',surface:'Sealed and compacted gravel, exposed to wind.',
+   w:[[-37.8620,144.7480,'Williams Landing station, bikes on the train'],[-37.8900,144.7600,'Skeleton Creek path'],[-37.9200,144.7800,'Point Cook Coastal Park'],[-37.8800,144.7950,'Altona Coastal Park'],[-37.8690,144.8300,'Altona beach'],[-37.8670,144.8290,'Altona station, train home']]},
+  direct:{km:null,flat:true,train:'Williams Landing',follows:'Train to Williams Landing, out to the coastal park and back the same way.',surface:'Sealed and gravel paths.',
+   w:[[-37.8620,144.7480,'Williams Landing station, bikes on the train'],[-37.8900,144.7600,'Skeleton Creek path'],[-37.9200,144.7800,'Point Cook Coastal Park, turn around'],[-37.8900,144.7600,'Skeleton Creek path'],[-37.8620,144.7480,'Williams Landing station']]}},
+ {id:'moonee',region:'North west',name:'Moonee Ponds Creek to Westmeadows',target:'Moonee Ponds Creek Trail',
+  blurb:'Straight up the creek from Docklands through Flemington, Essendon and Strathmore to the Jacana wetlands, a corridor you have never touched.',
+  scenic:{km:null,flat:true,follows:'Gardiners Creek and Yarra trails to Docklands, Moonee Ponds Creek Trail north to Westmeadows, back the same way.',surface:'Sealed shared path, some sections beside the freeway.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8170,144.9450,'Docklands, Moonee Ponds Creek Trail'],[-37.7900,144.9350,'Flemington'],[-37.7550,144.9150,'Essendon'],[-37.7320,144.9200,'Strathmore'],[-37.6900,144.8950,'Westmeadows, Jacana wetlands, turn around'],[-37.7550,144.9150,'Essendon'],[-37.8170,144.9450,'Docklands'],[-37.8285,145.0060,'Burnley'],'H']},
+  direct:{km:null,flat:true,follows:'Same way to Docklands, up the creek to Essendon and back.',surface:'Sealed shared path.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8170,144.9450,'Docklands'],[-37.7900,144.9350,'Flemington'],[-37.7550,144.9150,'Essendon, turn around'],[-37.8170,144.9450,'Docklands'],[-37.8285,145.0060,'Burnley'],'H']}},
+ {id:'upfield',region:'North',name:'Upfield path and Merri Creek loop',target:'Upfield Bike Path',
+  blurb:'North beside the railway through Brunswick and Coburg to Fawkner, then home down the Merri Creek. Two parallel corridors, one loop, no repeats.',
+  scenic:{km:null,flat:true,follows:'Yarra and Capital City trails to North Melbourne, Upfield Bike Path north to Fawkner, across to the Merri Creek Trail, south to Dights Falls and home along the Yarra.',surface:'Sealed paths, busy near Brunswick on weekends.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8050,144.9450,'North Melbourne, Upfield path'],[-37.7700,144.9600,'Brunswick'],[-37.7420,144.9640,'Coburg'],[-37.7100,144.9600,'Fawkner'],[-37.7100,144.9720,'Merri Creek at Fawkner'],[-37.7450,144.9700,'Coburg Lake'],[-37.7800,144.9900,'Rushall'],[-37.7960,145.0070,'Dights Falls'],[-37.8285,145.0060,'Burnley'],'H']},
+  direct:{km:null,flat:true,follows:'Same way to North Melbourne, Upfield path to Coburg and back.',surface:'Sealed paths.',
+   w:['H',[-37.8285,145.0060,'Yarra at Burnley'],[-37.8210,144.9640,'Southbank'],[-37.8050,144.9450,'North Melbourne'],[-37.7700,144.9600,'Brunswick'],[-37.7420,144.9640,'Coburg, turn around'],[-37.7700,144.9600,'Brunswick'],[-37.8050,144.9450,'North Melbourne'],[-37.8210,144.9640,'Southbank'],[-37.8285,145.0060,'Burnley'],'H']}},
+ {id:'diamond',region:'North east',name:'Diamond Creek and the Plenty River',target:'Diamond Creek Trail',
+  blurb:'Beyond Eltham the Yarra suburbs give way to bush. The Diamond Creek Trail runs north to Hurstbridge through farmland, and the Plenty River Trail brings you back through Greensborough.',
+  scenic:{km:null,flat:false,train:'Eltham',follows:'Train to Eltham, Diamond Creek Trail north to Hurstbridge, back to Diamond Creek, across to Greensborough and the Plenty River Trail, train home from Greensborough.',surface:'Sealed and gravel, rolling hills.',
+   w:[[-37.7160,145.1500,'Eltham station, bikes on the train'],[-37.6730,145.1560,'Diamond Creek'],[-37.6400,145.1930,'Hurstbridge, turn around'],[-37.6730,145.1560,'Diamond Creek'],[-37.7050,145.1030,'Greensborough, Plenty River Trail'],[-37.7300,145.1150,'Lower Plenty'],[-37.7050,145.1030,'Greensborough station, train home']]},
+  direct:{km:null,flat:false,train:'Eltham',follows:'Train to Eltham, ride to Diamond Creek township and back.',surface:'Sealed path with a few short climbs.',
+   w:[[-37.7160,145.1500,'Eltham station, bikes on the train'],[-37.6730,145.1560,'Diamond Creek, turn around'],[-37.7160,145.1500,'Eltham station']]}},
 ];
 const SCEN='#1baf7a', DIR='#7c5cd6';
 const kmBetween=(a,b)=>Math.hypot((a[0]-b[0])*110.57,(a[1]-b[1])*88);
@@ -1371,7 +1427,7 @@ function buildIndex(){ const g=new Map(); rides.forEach(r=>{ if(!r.hasGps) retur
 function coveredBy(g,q,th){ const gi=Math.floor(q[0]/0.005), gj=Math.floor(q[1]/0.005); for(let i=gi-1;i<=gi+1;i++) for(let j=gj-1;j<=gj+1;j++){ const c=g.get(i+','+j); if(c) for(const p of c) if(kmBetween(p,q)<th) return true; } return false; }
 function trailCoverage(){ const g=buildIndex(); return TRAILS.map(t=>{ const s=[]; let L=0; for(let i=1;i<t.w.length;i++){ const a=t.w[i-1], b=t.w[i]; const d=kmBetween(a,b); L+=d; const n=Math.max(1,Math.round(d/0.3)); for(let k=0;k<n;k++) s.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]); } const c=s.filter(q=>coveredBy(g,q,0.35)).length; return {n:t.n,km:Math.round(L),pct:Math.round(100*c/s.length)}; }).sort((a,b)=>a.pct-b.pct); }
 
-let cellLayer=null, trailLayer=null, sugLayer=null, sugMarkers=[], exploreMode=false, curSug=null, curOpt='scenic';
+let cellLayer=null, trailLayer=null, sugLayer=null, sugMarkers=[], exploreMode=false, curSug=null, curOpt='scenic', regionFilter='All';
 function toggleCells(on){
   if(cellLayer){ map.removeLayer(cellLayer); cellLayer=null; }
   if(!on) return;
@@ -1404,8 +1460,10 @@ function drawExplore(){
   const tl=h('div','trails',explore);
   cov.forEach(t=>{ const row=h('div','trow',tl); const nm=h('div',null,row); h('b',null,nm,t.n); h('small',null,nm,' '+t.km+' km'); const bar=h('div','tbar',row); const fill=document.createElement('i'); fill.style.width=t.pct+'%'; fill.style.background=t.pct<40?'#c98500':ROUTE; bar.appendChild(fill); h('span','tpct',row,t.pct+'%'); });
   h('div','sec',explore,'Suggested rides');
-  h('p','why',explore,'Each ride has a scenic option that follows trails as far as possible and a direct option that keeps to trails, bike lanes and back streets but gets there sooner. Times use your own average speed with a stop allowance.');
-  SUGGEST.forEach(s=>{ const b=h('button','sug',explore); b.id='sug-'+s.id; h('span','d',b,s.name); h('span','k',b,optKm(s.scenic.w)+' / '+optKm(s.direct.w)+' km'); h('span','n',b,'Targets: '+s.target+' · scenic / direct'); b.addEventListener('click',()=>openSuggestion(s,'scenic')); });
+  h('p','why',explore,'Each ride has a scenic option that follows trails as far as possible and a direct option that keeps to trails, bike lanes and back streets but gets there sooner. Times use your own average speed with a stop allowance. Rides marked with a train take the bike on the train one or both ways.');
+  const regions=['All','West','South west','North west','North','North east','East','South','City','Day trip'];
+  const rf=h('div','opts',explore); regions.forEach(rg=>{ const b=h('button','chip',rf,rg); b.setAttribute('aria-pressed',String(rg===regionFilter)); b.addEventListener('click',()=>{ regionFilter=rg; drawExplore(); }); });
+  SUGGEST.filter(s=>regionFilter==='All'||s.region===regionFilter).forEach(s=>{ const b=h('button','sug',explore); b.id='sug-'+s.id; h('span','d',b,s.name); h('span','k',b,optKm(s.scenic.w)+' / '+optKm(s.direct.w)+' km'); h('span','n',b,s.region+' · targets '+s.target+(s.scenic.train||s.direct.train?' · train to '+(s.scenic.train||s.direct.train):'')); b.addEventListener('click',()=>openSuggestion(s,'scenic')); });
   h('p','why',explore,'Dotted lines are corridors, not turn by turn directions. Use the Google Maps button for cycling directions along the corridor, or download the GPX and open it in Komoot or the Bosch Flow app, which will route between the points on bike paths.');
 }
 function openSuggestion(s,opt){
@@ -1419,7 +1477,7 @@ function exploreDetail(s,opt){
   [['scenic','Scenic'],['direct','Direct']].forEach(([k,lab])=>{ const b=h('button','chip',tabs,lab); b.id='opt-'+k; b.setAttribute('aria-pressed',String(opt===k)); b.style.setProperty('--c',k==='scenic'?SCEN:DIR); b.addEventListener('click',()=>openSuggestion(s,k)); });
   const o=s[opt]; const km=optKm(o.w);
   const kv=h('div','kv',explore);
-  [['Distance','about '+km,'km'],['Time',optTime(km,opt==='scenic'),''],['Terrain',o.flat?'Flat':'Some hills',''],['Traffic','Trails and back streets','']].forEach(([l,v,u])=>{ const d=h('div',null,kv); h('div','lab',d,l); const n=h('div','num',d,v); n.style.fontSize='1.05rem'; if(u) h('small',null,n,u); });
+  [['Distance','about '+km,'km'],['Time',optTime(km,opt==='scenic'),''],['Terrain',o.flat?'Flat':'Some hills',''],[o.train?'Train':'Traffic',o.train?'To '+o.train:'Trails and back streets','']].forEach(([l,v,u])=>{ const d=h('div',null,kv); h('div','lab',d,l); const n=h('div','num',d,v); n.style.fontSize='1.05rem'; if(u) h('small',null,n,u); });
   h('div','sec',explore,'Follows'); h('p','txt',explore,o.follows);
   h('div','sec',explore,'Surface'); h('p','txt',explore,o.surface);
   h('div','sec',explore,'Waypoints');
