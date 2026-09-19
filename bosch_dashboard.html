@@ -119,6 +119,9 @@ svg .xh{stroke:var(--axis);stroke-width:1;pointer-events:none}
 .rstats span{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
 .rstats b{font-weight:600;font-variant-numeric:tabular-nums}
 @media (max-width:520px){.route{grid-template-columns:1fr}.route .mini{width:100%;height:auto}}
+body.embed h1{font-size:1.6rem}
+body.embed .sub{display:none}
+body.embed .wrap{padding-block:16px 48px}
 @media (prefers-reduced-motion:no-preference){.chip,.tog{transition:background .15s}}
 </style>
 
@@ -507,6 +510,7 @@ function renderAll(){
   card(eg,{id:'hs',size:'half',title:'Ride length',why:'How far a typical outing goes, in 5 km bands.',render:histChart,table:histTable});
   card(eg,{id:'hd',size:'half',title:'Hardest rides',why:'Ranked by climbing multiplied by your own power output.',render:hardChart,table:hardTable});
 }
+if(new URLSearchParams(location.search).get('embed')==='1') document.body.classList.add('embed');
 let initial='all'; try{ initial=localStorage.getItem('ridebook-range')||'all'; }catch(e){}
 if(!document.querySelector('.chip[data-range="'+initial+'"]')) initial='all';
 applyRange(initial);
