@@ -746,14 +746,19 @@ function showTip(head, rows, ev){
 }
 function moveTip(ev){ const w=tip.offsetWidth, hgt=tip.offsetHeight; let x=ev.clientX+14, y=ev.clientY+14; if(x+w>window.innerWidth-8) x=ev.clientX-w-14; if(y+hgt>window.innerHeight-8) y=ev.clientY-hgt-14; tip.style.left=x+'px'; tip.style.top=y+'px'; }
 function hideTip(){ tip.hidden=true; }
+document.addEventListener('pointermove',ev=>{ if(!tip.hidden && !(ev.target.closest && ev.target.closest('svg'))) hideTip(); },{passive:true});
+document.addEventListener('pointerdown',ev=>{ if(!(ev.target.closest && ev.target.closest('.hit,.seg,.cell,.bar'))) hideTip(); },{passive:true});
+addEventListener('scroll',hideTip,{passive:true});
+document.addEventListener('pointerleave',hideTip);
 
+function guardSvg(svg){ svg.addEventListener('pointerleave',hideTip); return svg; }
 /* ---------- card ---------- */
 function card(parent, opts){
   const c=h('section','card'+(opts.size?' '+opts.size:''),parent);
   const hd=h('header',null,c); const tw=h('div',null,hd); h('h3',null,tw,opts.title); if(opts.why) h('p','why',tw,opts.why);
   const tog=h('button','tog',hd,'Table'); tog.setAttribute('aria-pressed','false'); tog.id='tog-'+opts.id;
   const viz=h('div','viz',c); const tbl=h('div','tbl',c); tbl.hidden=true;
-  opts.render(viz);
+  opts.render(viz); viz.querySelectorAll('svg').forEach(guardSvg);
   const t=opts.table(); const table=h('table',null,tbl); const thead=h('thead',null,table); const trh=h('tr',null,thead); t.cols.forEach(cn=>h('th',null,trh,cn));
   const tb=h('tbody',null,table); t.rows.forEach(row=>{ const tr=h('tr',null,tb); row.forEach(v=>h('td',null,tr,v==null?'':String(v))); });
   tog.addEventListener('click',()=>{ const on=tog.getAttribute('aria-pressed')!=='true'; tog.setAttribute('aria-pressed',String(on)); viz.hidden=on; tbl.hidden=!on; tog.textContent=on?'Chart':'Table'; });
@@ -977,7 +982,7 @@ function mapChart(viz){
   if(mapZoom==='home'){ const main=tracked.filter(r=>r.cl>=0&&r.cl<3); pts=(main.length?main:tracked).flatMap(r=>GEO.tracks[r.id]); } else pts=tracked.flatMap(r=>GEO.tracks[r.id]);
   const ext=extent(pts, mapZoom==='home'?1.2:4);
   const W=1080, H=Math.max(380,Math.min(640,Math.round(W*(ext.y1-ext.y0)/(ext.x1-ext.x0))));
-  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Map of ride routes'},viz);
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Map of ride routes'},viz); svg.style.overflow='hidden';
   el('rect',{x:0,y:0,width:W,height:H,rx:8,fill:'var(--plane)'},svg);
   const shown=mapZoom==='home'? tracked : tracked;
   drawRoutes(svg, shown, ext, W, H, {landmarks:true,hover:true,scale:true});
@@ -991,7 +996,7 @@ function routesChart(viz){
   const rows=routeRows(); if(!rows.length){ h('p','why',viz,'No repeated routes in this range.'); return; }
   const wrap=h('div','routes',viz);
   rows.slice(0,8).forEach(x=>{ const row=h('div','route',wrap);
-    const mini=el('svg',{viewBox:'0 0 120 84',class:'mini','aria-hidden':'true'},row); el('rect',{x:0,y:0,width:120,height:84,rx:6,fill:'var(--plane)'},mini);
+    const mini=el('svg',{viewBox:'0 0 120 84',class:'mini','aria-hidden':'true'},row); mini.style.overflow='hidden'; el('rect',{x:0,y:0,width:120,height:84,rx:6,fill:'var(--plane)'},mini);
     drawRoutes(mini, x.rs, extent(x.rs.flatMap(r=>GEO.tracks[r.id]),0.4), 120, 84, {width:1.4,opacity:.8});
     const body=h('div',null,row); const nm=h('div','rname',body); const sw=document.createElement('i'); sw.style.background=clCol(x.c.i); nm.appendChild(sw); nm.appendChild(document.createTextNode(x.c.name));
     h('div','rmeta',body, x.n+' rides · typically '+fmt(x.km)+' km and '+fmt(x.up)+' m of climbing · last ridden '+dmy(x.last.d));
