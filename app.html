@@ -105,22 +105,23 @@ let BASE=ROOT;                             /* where the ride pages are loaded fr
 function pageUrl(f,extra){ return BASE+f.dataset.page+'?embed=1'+(extra||''); }
 function load(id){ const f=document.getElementById(id); if(f&&!f.src) f.src=pageUrl(f); return f; }
 async function exists(u){ try{ const r=await fetch(u,{cache:'no-store'}); return r.ok; }catch(e){ return false; } }
-async function latestSha(){
-  /* GitHub itself is never cached, so ask it first; the site's own note is the fallback, then whatever worked last time */
-  try{ const r=await fetch('https://api.github.com/repos/niccapp0-stack/health-diary/commits/main',{headers:{Accept:'application/vnd.github+json'}}); if(r.ok){ const j=await r.json(); return [String(j.sha).slice(0,10),'GitHub']; } }catch(e){}
-  try{ const r=await fetch(ROOT+'build.json?u='+Date.now(),{cache:'no-store'}); if(r.ok){ return [(await r.json()).sha,'the site']; } }catch(e){}
-  try{ const s=localStorage.getItem('ridebook-sha'); if(s) return [s,'last time']; }catch(e){}
-  return [null,''];
+async function shaCandidates(){
+  /* every copy worth using sits under v/<commit>/, so gather every SHA worth trying: GitHub's newest, then the site's own note, which can lag while a deploy is still rolling out */
+  const out=[]; const add=(s,via)=>{ s=String(s||'').slice(0,10); if(/^[0-9a-f]{7,}$/.test(s)&&!out.some(c=>c[0]===s)) out.push([s,via]); };
+  try{ const r=await fetch('https://api.github.com/repos/niccapp0-stack/health-diary/commits/main',{headers:{Accept:'application/vnd.github+json'}}); if(r.ok) add((await r.json()).sha,'GitHub'); }catch(e){}
+  try{ const r=await fetch(ROOT+'build.json?u='+Date.now(),{cache:'no-store'}); if(r.ok) add((await r.json()).sha,'the site'); }catch(e){}
+  if(!out.length){ try{ add(localStorage.getItem('ridebook-sha'),'last time'); }catch(e){} }
+  return out;
 }
 async function chooseContent(){
   /* returns false when it has sent the browser to a newer copy of the app */
-  const [sha,via]=await Promise.race([latestSha(),new Promise(r=>setTimeout(()=>r([null,'']),6000))]);
-  const cands=[]; if(sha) cands.push(sha); if(/^[0-9a-f]{7,}$/.test(SHA)&&SHA!==sha) cands.push(SHA);
-  for(const s of cands){
+  const cands=await Promise.race([shaCandidates(),new Promise(r=>setTimeout(()=>r([]),6000))]);
+  if(/^[0-9a-f]{7,}$/.test(SHA)&&!cands.some(c=>c[0]===SHA)) cands.push([SHA,'this copy']);
+  for(const [s,via] of cands){
     if(!(await exists(ROOT+'v/'+s+'/build.json'))) continue;
     BASE=ROOT+'v/'+s+'/'; try{ localStorage.setItem('ridebook-sha',s); }catch(e){}
     document.getElementById('content').textContent=' · rides published as '+s.slice(0,7)+(via?', checked with '+via:'');
-    if(s===sha && s!==SHA && !location.pathname.includes('/v/'+s+'/') && await exists(ROOT+'v/'+s+'/app.html')){ location.replace(ROOT+'v/'+s+'/app.html'+location.hash); return false; }
+    if(s===cands[0][0] && s!==SHA && !location.pathname.includes('/v/'+s+'/') && await exists(ROOT+'v/'+s+'/app.html')){ location.replace(ROOT+'v/'+s+'/app.html'+location.hash); return false; }
     return true;
   }
   BASE=ROOT; return true;
@@ -163,12 +164,17 @@ async function applyUpdate(live){
   try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(g=>g.update())); }catch(e){}
   location.replace(ROOT+'app.html?b='+encodeURIComponent(live.replace(/\W+/g,'-'))+(location.hash||''));
 }
+let updRetry=0;
 async function checkBuild(force){
   try{ const live=await liveBuild();
     const num=s=>+((s||'').match(/v(\d+)/)||[0,0])[1];
-    if(!live||num(live)<=num(BUILD)){ if(force) document.getElementById('upd').textContent='Latest version, '+BUILD.replace('App build ',''); return; }
+    if(!live){ if(force) document.getElementById('upd').textContent='Could not check for updates right now.'; return; }
+    if(num(live)<=num(BUILD)){ if(force) document.getElementById('upd').textContent='Latest version, '+BUILD.replace('App build ',''); return; }
     let last=0; try{ last=+sessionStorage.getItem('ridebook-upd-at')||0; }catch(e){}
-    if(!force && Date.now()-last<90000) return; /* tried a moment ago, the site may still be settling; try again shortly */
+    const wait=90000-(Date.now()-last);
+    if(!force && wait>0){ /* tried a moment ago, the site may still be settling; run the real retry when the guard expires */
+      clearTimeout(updRetry); updRetry=setTimeout(()=>{ if(document.visibilityState==='visible') checkBuild(); },wait); return;
+    }
     try{ sessionStorage.setItem('ridebook-upd-at',String(Date.now())); }catch(e){}
     await applyUpdate(live);
   }catch(e){ if(force) document.getElementById('upd').textContent='Could not check for updates right now.'; }
