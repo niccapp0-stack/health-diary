@@ -51,10 +51,19 @@ jobs:
       - name: Confirm the live site serves this commit
         run: |
           want="${GITHUB_SHA:0:10}"
+          check() { curl -sS -H 'Cache-Control: no-cache' "https://niccapp0-stack.github.io/health-diary/build.json?c=$RANDOM" | tr -d '\n' || true; }
+          ok=0
           for i in $(seq 1 24); do
-            live=$(curl -sS -H 'Cache-Control: no-cache' "https://niccapp0-stack.github.io/health-diary/build.json?c=$i" | tr -d '\n' || true)
-            case "$live" in *"$want"*) echo "Live site serves $want"; exit 0;; esac
+            case "$(check)" in *"$want"*) ok=1; break;; esac
             sleep 10
           done
-          echo "::error::The live site is still not serving $want after four minutes. Something else is overwriting the deployment (the legacy branch build?)."
-          exit 1
+          if [ "$ok" != "1" ]; then
+            echo "::error::The live site never served $want. Something else is overwriting the deployment."; exit 1
+          fi
+          echo "Live site serves $want. Holding for 90 seconds to make sure nothing replaces it."
+          for i in 1 2 3; do
+            sleep 30
+            case "$(check)" in *"$want"*) echo "  still $want after $((i*30)) s";; *)
+              echo "::error::The live site served $want and was then replaced. The legacy branch build is still on: set Settings, Pages, Build and deployment, Source to GitHub Actions."; exit 1;; esac
+          done
+          echo "Live site is serving $want and stayed that way."
