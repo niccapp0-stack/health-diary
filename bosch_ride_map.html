@@ -81,7 +81,10 @@ main{flex:1;display:grid;grid-template-columns:1fr 360px;min-height:0}
 .ck{display:flex;gap:8px;align-items:flex-start;font-size:.88rem;margin:4px 0 10px;cursor:pointer}
 .ck input{margin-top:3px}
 .trails{display:grid;gap:6px;margin-bottom:8px}
-.trow{display:grid;grid-template-columns:1fr 90px 40px;gap:8px;align-items:center;font-size:.86rem}
+.trow{display:grid;grid-template-columns:1fr 90px 40px;gap:8px;align-items:center;font-size:.86rem;border:0;background:transparent;font-family:inherit;color:inherit;text-align:left;width:calc(100% + 12px);margin:0 -6px;padding:5px 6px;border-radius:8px;cursor:pointer}
+.trow:hover{background:var(--hover)}
+.trow[aria-pressed="true"]{background:var(--hover);box-shadow:inset 0 0 0 2px var(--route)}
+.trow b{font-weight:600}
 .trow small{color:var(--muted)}
 .tbar{height:8px;background:var(--plane);border-radius:4px;overflow:hidden}
 .tbar i{display:block;height:100%;border-radius:4px}
@@ -121,7 +124,7 @@ body.embed .top .sub{display:none}
   </div>
 </header>
 <main>
-  <div id="map"><div class="stamp">build 19 Sep 2026 v8</div></div>
+  <div id="map"><div class="stamp">build 20 Sep 2026 v11</div></div>
   <aside class="side">
     <div class="head"><h2 id="sidetitle">Rides</h2><div class="cnt" id="cnt"></div>
       <div class="mode" role="group" aria-label="Panel"><button class="chip" data-mode="rides" aria-pressed="true" id="m-rides">Rides</button><button class="chip" data-mode="explore" aria-pressed="false" id="m-explore">Explore</button></div></div>
@@ -206,7 +209,7 @@ function drawList(){
   document.getElementById('sub').textContent=rides.filter(r=>r.hasGps).length+' of '+rides.length+' rides have a GPS track · '+dmy(rides[rides.length-1].d)+' to '+dmy(rides[0].d)+(DATA.privacyM?' · first and last '+DATA.privacyM+' m of every ride hidden':'');
 }
 function select(id,fit){
-  if(id&&exploreMode){ exploreMode=false; explore.hidden=true; document.body.classList.remove('explore'); setTimeout(()=>map.invalidateSize(),50); clearSuggestion(); curSug=null; document.querySelectorAll('.chip[data-mode]').forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.mode==='rides'))); }
+  if(id&&exploreMode){ exploreMode=false; explore.hidden=true; document.body.classList.remove('explore'); setTimeout(()=>map.invalidateSize(),50); clearSuggestion(); clearTrail(); curSug=null; document.querySelectorAll('.chip[data-mode]').forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.mode==='rides'))); }
   selected=id; drawSelection();
   list.querySelectorAll('.ride').forEach(b=>b.setAttribute('aria-selected',String(b.id==='ride-'+(id||'').slice(0,8))));
   if(!id){ if(exploreMode) return; detail.hidden=true; list.hidden=false; document.getElementById('sidetitle').textContent='Rides'; drawList(); return; }
@@ -356,6 +359,73 @@ const SUGGEST=[
    w:[[-37.7160,145.1500,'Eltham station, bikes on the train'],[-37.6730,145.1560,'Diamond Creek'],[-37.6400,145.1930,'Hurstbridge, turn around'],[-37.6730,145.1560,'Diamond Creek'],[-37.7050,145.1030,'Greensborough, Plenty River Trail'],[-37.7300,145.1150,'Lower Plenty'],[-37.7050,145.1030,'Greensborough station, train home']]},
   direct:{km:null,flat:false,train:'Eltham',follows:'Train to Eltham, ride to Diamond Creek township and back.',surface:'Sealed path with a few short climbs.',
    w:[[-37.7160,145.1500,'Eltham station, bikes on the train'],[-37.6730,145.1560,'Diamond Creek, turn around'],[-37.7160,145.1500,'Eltham station']]}},
+
+ {id:'gvrt',region:'Country',name:'Great Victorian Rail Trail, Tallarook to Mansfield',target:'Great Victorian Rail Trail',
+  blurb:'The longest rail trail in Victoria, 134 km through the Goulburn valley, the Cheviot tunnel and Lake Eildon country. Nothing in your rides goes anywhere near it. V/Line trains carry bikes to Tallarook, coaches do not.',
+  scenic:{km:null,flat:false,train:'Tallarook',follows:'The whole trail from Tallarook to Mansfield over two days with a night in Yea or Bonnie Doon, then a lift or a car shuffle home.',surface:'Compacted gravel the whole way, one long steady climb after Yea.',
+   w:[[-37.0940,145.1000,'Tallarook station, bikes on the train'],[-37.1300,145.2000,'Trawool'],[-37.2110,145.4270,'Yea'],[-37.2350,145.4900,'Cheviot tunnel'],[-37.1630,145.5400,'Molesworth'],[-37.1270,145.5800,'Cathkin'],[-37.1080,145.6120,'Yarck'],[-36.9800,145.7200,'Merton'],[-37.0240,145.8770,'Bonnie Doon, the lake crossing'],[-37.0540,146.0880,'Mansfield']]},
+  direct:{km:null,flat:false,train:'Tallarook',follows:'Tallarook to Yea along the Goulburn and back the same way.',surface:'Compacted gravel, nearly flat.',
+   w:[[-37.0940,145.1000,'Tallarook station, bikes on the train'],[-37.1300,145.2000,'Trawool'],[-37.2110,145.4270,'Yea, turn around'],[-37.1300,145.2000,'Trawool'],[-37.0940,145.1000,'Tallarook station']]}},
+ {id:'bellarine',region:'Country',name:'Bellarine Rail Trail to Queenscliff',target:'Bellarine Rail Trail',
+  blurb:'Geelong to the sea at Queenscliff on an old rail line through vineyards and farmland. Trains carry bikes to South Geelong.',
+  scenic:{km:null,flat:true,train:'South Geelong',follows:'South Geelong station, the rail trail through Leopold, Curlewis and Drysdale to Queenscliff harbour, lunch, and back the same way.',surface:'Sealed near Geelong, then compacted gravel.',
+   w:[[-38.1600,144.3650,'South Geelong station, bikes on the train'],[-38.1900,144.4700,'Leopold'],[-38.1830,144.5250,'Curlewis'],[-38.1740,144.5680,'Drysdale'],[-38.2680,144.6620,'Queenscliff, turn around'],[-38.1740,144.5680,'Drysdale'],[-38.1900,144.4700,'Leopold'],[-38.1600,144.3650,'South Geelong station']]},
+  direct:{km:null,flat:true,train:'South Geelong',follows:'South Geelong to Drysdale and back.',surface:'Sealed and compacted gravel.',
+   w:[[-38.1600,144.3650,'South Geelong station, bikes on the train'],[-38.1900,144.4700,'Leopold'],[-38.1740,144.5680,'Drysdale, turn around'],[-38.1900,144.4700,'Leopold'],[-38.1600,144.3650,'South Geelong station']]}},
+ {id:'basscoast',region:'Country',name:'Bass Coast Rail Trail and the Kilcunda trestle bridge',target:'Bass Coast Rail Trail',
+  blurb:'A short coastal rail trail with big Bass Strait views and the timber trestle bridge at Kilcunda. About two hours from home by car.',
+  scenic:{km:null,flat:true,follows:'Wonthaggi to Kilcunda along the coast, over the trestle bridge and on to Anderson, then back.',surface:'Compacted gravel, exposed to the wind.',
+   w:[[-38.6050,145.5910,'Wonthaggi, park at the trail head'],[-38.5550,145.4810,'Kilcunda trestle bridge'],[-38.5330,145.4430,'Anderson, turn around'],[-38.5550,145.4810,'Kilcunda'],[-38.6050,145.5910,'Wonthaggi']]},
+  direct:{km:null,flat:true,follows:'Wonthaggi to Kilcunda and back.',surface:'Compacted gravel.',
+   w:[[-38.6050,145.5910,'Wonthaggi'],[-38.5550,145.4810,'Kilcunda, turn around'],[-38.6050,145.5910,'Wonthaggi']]}},
+ {id:'gsrt',region:'Country',name:'Great Southern Rail Trail through South Gippsland',target:'Great Southern Rail Trail',
+  blurb:'Rolling green hills from Leongatha to Foster and the coast at Port Welshpool. The full trail is a weekend. Drive down, as V/Line runs coaches only here.',
+  scenic:{km:null,flat:false,follows:'Leongatha to Foster through Koonwarra, Meeniyan and Fish Creek, a night in Foster, and back the next day.',surface:'Compacted gravel, rolling hills, several old trestle bridges.',
+   w:[[-38.4760,145.9460,'Leongatha'],[-38.5350,145.9800,'Koonwarra'],[-38.5770,146.0210,'Meeniyan'],[-38.6990,146.0830,'Fish Creek'],[-38.6520,146.2020,'Foster, overnight'],[-38.6990,146.0830,'Fish Creek'],[-38.5770,146.0210,'Meeniyan'],[-38.5350,145.9800,'Koonwarra'],[-38.4760,145.9460,'Leongatha']]},
+  direct:{km:null,flat:false,follows:'Leongatha to Meeniyan and back.',surface:'Compacted gravel.',
+   w:[[-38.4760,145.9460,'Leongatha'],[-38.5350,145.9800,'Koonwarra'],[-38.5770,146.0210,'Meeniyan, turn around'],[-38.5350,145.9800,'Koonwarra'],[-38.4760,145.9460,'Leongatha']]}},
+ {id:'m2m',region:'Country',name:'Murray to Mountains, Wangaratta to Bright',target:'Murray to Mountains Rail Trail',
+  blurb:'The best known rail trail in the state, sealed the whole way up the Ovens valley to Bright under Mount Buffalo. Trains carry bikes to Wangaratta.',
+  scenic:{km:null,flat:false,train:'Wangaratta',follows:'Wangaratta to Bright via Everton, Myrtleford and Porepunkah, a night in Bright, then back to the train.',surface:'Sealed the whole way, a gentle climb up the valley.',
+   w:[[-36.3580,146.3130,'Wangaratta station, bikes on the train'],[-36.4280,146.5420,'Everton'],[-36.5570,146.7230,'Myrtleford'],[-36.6860,146.9130,'Porepunkah'],[-36.7300,146.9600,'Bright, overnight'],[-36.6860,146.9130,'Porepunkah'],[-36.5570,146.7230,'Myrtleford'],[-36.4280,146.5420,'Everton'],[-36.3580,146.3130,'Wangaratta station']]},
+  direct:{km:null,flat:false,train:'Wangaratta',follows:'Drive to Myrtleford, ride to Bright and back.',surface:'Sealed.',
+   w:[[-36.5570,146.7230,'Myrtleford'],[-36.6860,146.9130,'Porepunkah'],[-36.7300,146.9600,'Bright, turn around'],[-36.6860,146.9130,'Porepunkah'],[-36.5570,146.7230,'Myrtleford']]}},
+ {id:'egrt',region:'Country',name:'East Gippsland Rail Trail, Bairnsdale to Nowa Nowa',target:'East Gippsland Rail Trail',
+  blurb:'Forest and farmland east of the Gippsland Lakes, with the Nicholson river bridge and the long climb to Colquhoun forest. Trains carry bikes to Bairnsdale.',
+  scenic:{km:null,flat:false,train:'Bairnsdale',follows:'Bairnsdale to Nowa Nowa through Nicholson and Bruthen, a night at Nowa Nowa or Lakes Entrance, back the next day.',surface:'Gravel, some rougher sections in the forest.',
+   w:[[-37.8250,147.6110,'Bairnsdale station, bikes on the train'],[-37.8180,147.7350,'Nicholson'],[-37.7080,147.8310,'Bruthen'],[-37.7270,148.0960,'Nowa Nowa, overnight'],[-37.7080,147.8310,'Bruthen'],[-37.8180,147.7350,'Nicholson'],[-37.8250,147.6110,'Bairnsdale station']]},
+  direct:{km:null,flat:false,train:'Bairnsdale',follows:'Bairnsdale to Bruthen and back.',surface:'Gravel.',
+   w:[[-37.8250,147.6110,'Bairnsdale station, bikes on the train'],[-37.8180,147.7350,'Nicholson'],[-37.7080,147.8310,'Bruthen, turn around'],[-37.8180,147.7350,'Nicholson'],[-37.8250,147.6110,'Bairnsdale station']]}},
+ {id:'okeefe',region:'Country',name:'O\'Keefe Rail Trail, Bendigo to Heathcote',target:'O\'Keefe Rail Trail',
+  blurb:'Box ironbark forest and the Campaspe river between two gold and wine towns. Trains carry bikes to Bendigo.',
+  scenic:{km:null,flat:false,train:'Bendigo',follows:'Bendigo station to Heathcote via Axedale, lunch, and back the same way.',surface:'Compacted gravel with some sealed sections, gently rolling.',
+   w:[[-36.7580,144.2800,'Bendigo station, bikes on the train'],[-36.7980,144.5100,'Axedale'],[-36.9210,144.7080,'Heathcote, turn around'],[-36.7980,144.5100,'Axedale'],[-36.7580,144.2800,'Bendigo station']]},
+  direct:{km:null,flat:false,train:'Bendigo',follows:'Bendigo to Axedale and back.',surface:'Compacted gravel.',
+   w:[[-36.7580,144.2800,'Bendigo station, bikes on the train'],[-36.7980,144.5100,'Axedale, turn around'],[-36.7580,144.2800,'Bendigo station']]}},
+ {id:'skipton',region:'Country',name:'Ballarat to Skipton Rail Trail',target:'Ballarat to Skipton Rail Trail',
+  blurb:'Volcanic plains west of Ballarat, with the Nimmons trestle bridge near Skipton. Trains carry bikes to Ballarat.',
+  scenic:{km:null,flat:true,train:'Ballarat',follows:'Ballarat station through Smythesdale and Linton to Skipton and back.',surface:'Compacted gravel, mostly flat and open.',
+   w:[[-37.5620,143.8500,'Ballarat station, bikes on the train'],[-37.6410,143.6860,'Smythesdale'],[-37.6870,143.5580,'Linton'],[-37.6860,143.3630,'Skipton, turn around'],[-37.6870,143.5580,'Linton'],[-37.6410,143.6860,'Smythesdale'],[-37.5620,143.8500,'Ballarat station']]},
+  direct:{km:null,flat:true,train:'Ballarat',follows:'Ballarat to Smythesdale and back.',surface:'Compacted gravel.',
+   w:[[-37.5620,143.8500,'Ballarat station, bikes on the train'],[-37.6410,143.6860,'Smythesdale, turn around'],[-37.5620,143.8500,'Ballarat station']]}},
+ {id:'gippsplains',region:'Country',name:'Gippsland Plains Rail Trail, Traralgon to Stratford',target:'Gippsland Plains Rail Trail',
+  blurb:'Dairy country between the Latrobe valley and the Gippsland Lakes. Both ends have a station, so it works one way with the train back.',
+  scenic:{km:null,flat:true,train:'Traralgon',follows:'Traralgon to Stratford one way through Glengarry, Cowwarr, Heyfield and Maffra, then the train home from Stratford.',surface:'Compacted gravel and some sealed sections, flat.',
+   w:[[-38.1950,146.5400,'Traralgon station, bikes on the train'],[-38.1250,146.5670,'Glengarry'],[-38.0580,146.6180,'Toongabbie'],[-38.0200,146.6940,'Cowwarr'],[-37.9810,146.7860,'Heyfield'],[-37.9640,146.8850,'Tinamba'],[-37.9700,146.9830,'Maffra'],[-37.9660,147.0790,'Stratford station, train home']]},
+  direct:{km:null,flat:true,train:'Traralgon',follows:'Traralgon to Toongabbie and back.',surface:'Compacted gravel.',
+   w:[[-38.1950,146.5400,'Traralgon station, bikes on the train'],[-38.1250,146.5670,'Glengarry'],[-38.0580,146.6180,'Toongabbie, turn around'],[-38.1250,146.5670,'Glengarry'],[-38.1950,146.5400,'Traralgon station']]}},
+ {id:'portfairy',region:'Country',name:'Port Fairy to Warrnambool Rail Trail',target:'Port Fairy to Warrnambool Rail Trail',
+  blurb:'Past Tower Hill crater and through Koroit to the fishing town of Port Fairy. Trains carry bikes to Warrnambool.',
+  scenic:{km:null,flat:true,train:'Warrnambool',follows:'Warrnambool station through Koroit to Port Fairy and back.',surface:'Sealed and compacted gravel, flat.',
+   w:[[-38.3820,142.4870,'Warrnambool station, bikes on the train'],[-38.2900,142.3670,'Koroit'],[-38.3860,142.2370,'Port Fairy, turn around'],[-38.2900,142.3670,'Koroit'],[-38.3820,142.4870,'Warrnambool station']]},
+  direct:{km:null,flat:true,train:'Warrnambool',follows:'Warrnambool to Koroit and back.',surface:'Sealed and gravel.',
+   w:[[-38.3820,142.4870,'Warrnambool station, bikes on the train'],[-38.2900,142.3670,'Koroit, turn around'],[-38.3820,142.4870,'Warrnambool station']]}},
+ {id:'highcountry',region:'Country',name:'High Country Rail Trail beside Lake Hume',target:'High Country Rail Trail',
+  blurb:'Along the shore of Lake Hume and over the long Sandy Creek bridge to Tallangatta. Trains carry bikes to Wodonga.',
+  scenic:{km:null,flat:true,train:'Wodonga',follows:'Wodonga through Bonegilla and Ebden, over the Sandy Creek bridge to Tallangatta and Old Tallangatta, and back.',surface:'Sealed near Wodonga, then compacted gravel.',
+   w:[[-36.1210,146.8880,'Wodonga station, bikes on the train'],[-36.1300,147.0200,'Bonegilla'],[-36.1500,147.0500,'Ebden'],[-36.1700,147.1000,'Sandy Creek bridge'],[-36.2170,147.1780,'Tallangatta'],[-36.2160,147.3150,'Old Tallangatta, turn around'],[-36.2170,147.1780,'Tallangatta'],[-36.1700,147.1000,'Sandy Creek bridge'],[-36.1210,146.8880,'Wodonga station']]},
+  direct:{km:null,flat:true,train:'Wodonga',follows:'Wodonga to the Sandy Creek bridge and back.',surface:'Sealed and gravel.',
+   w:[[-36.1210,146.8880,'Wodonga station, bikes on the train'],[-36.1300,147.0200,'Bonegilla'],[-36.1700,147.1000,'Sandy Creek bridge, turn around'],[-36.1300,147.0200,'Bonegilla'],[-36.1210,146.8880,'Wodonga station']]}},
 ];
 const SCEN='#1baf7a', DIR='#7c5cd6';
 const kmBetween=(a,b)=>Math.hypot((a[0]-b[0])*110.57,(a[1]-b[1])*88);
@@ -367,7 +437,7 @@ function optTime(km,scenic){ const speed=scenic?19:21; const mins=Math.round(km/
 /* coverage of trail corridors and 1 km cells, from your own tracks */
 function buildIndex(){ const g=new Map(); rides.forEach(r=>{ if(!r.hasGps) return; r.pts.forEach(p=>{ const k=Math.floor(p[0]/0.005)+','+Math.floor(p[1]/0.005); if(!g.has(k)) g.set(k,[]); g.get(k).push(p); }); }); return g; }
 function coveredBy(g,q,th){ const gi=Math.floor(q[0]/0.005), gj=Math.floor(q[1]/0.005); for(let i=gi-1;i<=gi+1;i++) for(let j=gj-1;j<=gj+1;j++){ const c=g.get(i+','+j); if(c) for(const p of c) if(kmBetween(p,q)<th) return true; } return false; }
-function trailCoverage(){ const g=buildIndex(); return TRAILS.map(t=>{ const s=[]; let L=0; for(let i=1;i<t.w.length;i++){ const a=t.w[i-1], b=t.w[i]; const d=kmBetween(a,b); L+=d; const n=Math.max(1,Math.round(d/0.3)); for(let k=0;k<n;k++) s.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]); } const c=s.filter(q=>coveredBy(g,q,0.35)).length; return {n:t.n,km:Math.round(L),pct:Math.round(100*c/s.length)}; }).sort((a,b)=>a.pct-b.pct); }
+function trailCoverage(){ const g=buildIndex(); return TRAILS.map(t=>{ const s=[]; let L=0; for(let i=1;i<t.w.length;i++){ const a=t.w[i-1], b=t.w[i]; const d=kmBetween(a,b); L+=d; const n=Math.max(1,Math.round(d/0.3)); for(let k=0;k<n;k++) s.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]); } s.push(t.w[t.w.length-1]); const cv=s.map(q=>coveredBy(g,q,0.35)); const c=cv.filter(Boolean).length; return {n:t.n,w:t.w,km:Math.round(L),pct:Math.round(100*c/s.length),s,cv}; }).sort((a,b)=>a.pct-b.pct); }
 
 let cellLayer=null, trailLayer=null, sugLayer=null, sugMarkers=[], exploreMode=false, curSug=null, curOpt='scenic', regionFilter='All', showTrails=false;
 function toggleCells(on){
@@ -382,13 +452,28 @@ function toggleCells(on){
   cellLayer=L.layerGroup(rects).addTo(map);
 }
 function showSuggestion(s,opt){
-  curSug=s; curOpt=opt; clearSuggestion();
+  curSug=s; curOpt=opt; clearSuggestion(); clearTrail();
   const o=s[opt]; const pts=resolveW(o.w); const col=opt==='scenic'?SCEN:DIR;
   sugLayer=L.polyline(pts.map(p=>[p[0],p[1]]),{color:col,weight:5,opacity:.85,dashArray:'1 9',lineCap:'round'}).addTo(map);
   pts.forEach((p,i)=>{ const first=i===0, last=i===pts.length-1; const m=L.circleMarker([p[0],p[1]],{radius:first||last?7:5,color:'#fff',weight:2,fillColor:col,fillOpacity:1}).addTo(map).bindTooltip((i+1)+'. '+(p[2]||'')); sugMarkers.push(m); });
   map.fitBounds(L.latLngBounds(pts.map(p=>[p[0],p[1]])),{padding:[30,30]});
 }
 function clearSuggestion(){ if(sugLayer){ map.removeLayer(sugLayer); sugLayer=null; } sugMarkers.forEach(m=>map.removeLayer(m)); sugMarkers=[]; }
+let curTrail=null;
+function clearTrail(){ if(trailLayer){ map.removeLayer(trailLayer); trailLayer=null; } curTrail=null; document.querySelectorAll('.trow[aria-pressed="true"]').forEach(r=>r.setAttribute('aria-pressed','false')); }
+function showTrail(t){
+  /* draw the corridor in runs: blue where your tracks pass within 350 m, amber where they never have */
+  if(curTrail===t.n){ clearTrail(); return; }
+  clearTrail(); curTrail=t.n;
+  const parts=[]; let run=[t.s[0]], state=t.cv[0];
+  for(let i=1;i<t.s.length;i++){ run.push(t.s[i]); if(t.cv[i]!==state){ parts.push([run,state]); run=[t.s[i]]; state=t.cv[i]; } }
+  parts.push([run,state]);
+  const lines=parts.filter(([r])=>r.length>1).map(([r,on])=>L.polyline(r.map(q=>[q[0],q[1]]),{color:on?ROUTE:'#c98500',weight:on?6:5,opacity:.9,dashArray:on?null:'2 8',lineCap:'round',interactive:false}));
+  const ends=[t.w[0],t.w[t.w.length-1]].map((q,i)=>L.circleMarker([q[0],q[1]],{radius:6,color:'#fff',weight:2,fillColor:'#101412',fillOpacity:1}).bindTooltip(t.n+(i?' end':' start')));
+  trailLayer=L.layerGroup([...lines,...ends]).addTo(map);
+  map.fitBounds(L.latLngBounds(t.w.map(q=>[q[0],q[1]])),{padding:[30,30]});
+  document.querySelectorAll('.trow').forEach(r=>r.setAttribute('aria-pressed',String(r.dataset.trail===t.n)));
+}
 function gmapsUrl(w){ const pts=resolveW(w); const ll=p=>p[0].toFixed(5)+','+p[1].toFixed(5); const mid=pts.slice(1,-1); const step=Math.max(1,Math.ceil(mid.length/8)); const wp=mid.filter((p,i)=>i%step===0).slice(0,8); return 'https://www.google.com/maps/dir/?api=1&travelmode=bicycling&origin='+ll(pts[0])+'&destination='+ll(pts[pts.length-1])+(wp.length?'&waypoints='+encodeURIComponent(wp.map(ll).join('|')):''); }
 function gpxText(s,opt){ const pts=resolveW(s[opt].w); const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;'); const name=esc(s.name+' ('+opt+')');
   let x='<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Nic\'s Ride Map" xmlns="http://www.topografix.com/GPX/1/1">\n<metadata><name>'+name+'</name></metadata>\n';
@@ -406,7 +491,7 @@ function drawExplore(){
   explore.replaceChildren();
   h('div','sec',explore,'Suggested rides');
   h('p','why',explore,'Pick a region, then a ride. Each has a scenic and a direct option.');
-  const regions=['All','West','South west','North west','North','North east','East','South','City','Day trip'];
+  const regions=['All','West','South west','North west','North','North east','East','South','City','Day trip','Country'];
   const rf=h('div','opts',explore); regions.forEach(rg=>{ const b=h('button','chip',rf,rg); b.setAttribute('aria-pressed',String(rg===regionFilter)); b.addEventListener('click',()=>{ regionFilter=rg; drawExplore(); }); });
   const list=SUGGEST.filter(s=>regionFilter==='All'||s.region===regionFilter);
   h('p','why',explore,list.length+' of '+SUGGEST.length+' rides'+(regionFilter==='All'?'':' in the '+regionFilter.toLowerCase()));
@@ -416,9 +501,9 @@ function drawExplore(){
   const cb=h('label','ck',explore); const inp=document.createElement('input'); inp.type='checkbox'; inp.id='cells'; inp.checked=!!cellLayer; inp.addEventListener('change',()=>toggleCells(inp.checked)); cb.appendChild(inp); cb.appendChild(document.createTextNode(' Shade the map: blue where you have ridden, amber squares within 12 km of home that you have never crossed'));
   const det=document.createElement('details'); det.className='trailbox'; det.open=showTrails; det.addEventListener('toggle',()=>{ showTrails=det.open; }); explore.appendChild(det);
   const sm=document.createElement('summary'); sm.textContent='Trail corridors, least ridden first'; det.appendChild(sm);
-  h('p','why',det,'The bar is how much of each trail your tracks pass within about 350 m of.');
+  h('p','why',det,'The bar is how much of each trail your tracks pass within about 350 m of. Tap a trail to see it on the map, blue where you have ridden it and amber where you have not. Tap again to hide it.');
   const tl=h('div','trails',det);
-  trailCoverage().forEach(t=>{ const row=h('div','trow',tl); const nm=h('div',null,row); h('b',null,nm,t.n); h('small',null,nm,' '+t.km+' km'); const bar=h('div','tbar',row); const fill=document.createElement('i'); fill.style.width=t.pct+'%'; fill.style.background=t.pct<40?'#c98500':ROUTE; bar.appendChild(fill); h('span','tpct',row,t.pct+'%'); });
+  trailCoverage().forEach(t=>{ const row=h('button','trow',tl); row.type='button'; row.dataset.trail=t.n; row.setAttribute('aria-pressed',String(curTrail===t.n)); row.addEventListener('click',()=>showTrail(t)); const nm=h('div',null,row); h('b',null,nm,t.n); h('small',null,nm,' '+t.km+' km'); const bar=h('div','tbar',row); const fill=document.createElement('i'); fill.style.width=t.pct+'%'; fill.style.background=t.pct<40?'#c98500':ROUTE; bar.appendChild(fill); h('span','tpct',row,t.pct+'%'); });
   explore.scrollTop=0;
 }
 function openSuggestion(s,opt){
@@ -447,7 +532,7 @@ function exploreDetail(s,opt){
 document.querySelectorAll('.chip[data-mode]').forEach(b=>b.addEventListener('click',()=>{ exploreMode=b.dataset.mode==='explore'; document.querySelectorAll('.chip[data-mode]').forEach(c=>c.setAttribute('aria-pressed',String(c===b)));
   document.body.classList.toggle('explore',exploreMode); setTimeout(()=>map.invalidateSize(),50);
   if(exploreMode){ select(null); list.hidden=true; detail.hidden=true; explore.hidden=false; document.getElementById('sidetitle').textContent='Explore'; document.getElementById('cnt').textContent='Gaps in your riding and where to go next'; drawExplore(); }
-  else { explore.hidden=true; clearSuggestion(); curSug=null; toggleCells(false); select(null); } }));
+  else { explore.hidden=true; clearSuggestion(); clearTrail(); curSug=null; toggleCells(false); select(null); } }));
 
 /* ---------- year filter ---------- */
 document.querySelectorAll('.chip[data-year]').forEach(b=>b.addEventListener('click',()=>{ year=b.dataset.year; document.querySelectorAll('.chip[data-year]').forEach(c=>c.setAttribute('aria-pressed',String(c===b))); if(selected&&year!=='all'&&byId[selected].d.slice(0,4)!==year) selected=null; drawMap(); drawList(); drawSelection(); if(!selected) select(null); }));
