@@ -8,9 +8,12 @@ in this folder, so template fixes reach the website without touching the PC.
 Usage:  python3 site/render.py <repo_root> <output_dir>
 """
 
+import json
+import os
 import re
 import shutil
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -50,6 +53,25 @@ def main() -> None:
         print("ride map re-rendered")
     else:
         print("ride map left as committed (data not found)")
+
+    # Every deploy also lives under v/<commit>/, a path no cache has ever seen, so the
+    # app can always load the newest pages no matter what an older copy is cached as.
+    sha = (os.environ.get("GITHUB_SHA") or "local")[:10]
+    app = (out / "app.html").read_text(encoding="utf-8").replace("const SHA='__SHA__'", f"const SHA='{sha}'")
+    (out / "app.html").write_text(app, encoding="utf-8")
+    vdir = out / "v" / sha
+    vdir.mkdir(parents=True, exist_ok=True)
+    for name in ("bosch_dashboard.html", "bosch_ride_map.html", "bosch_status.json"):
+        if (out / name).exists():
+            shutil.copy2(out / name, vdir / name)
+    (vdir / "app.html").write_text(
+        app.replace('href="manifest.webmanifest"', 'href="../../manifest.webmanifest"').replace('href="icons/', 'href="../../icons/'),
+        encoding="utf-8")
+    stamp = re.search(r'id="stamp"[^>]*>([^<]+)<', app)
+    build = json.dumps({"sha": sha, "build": stamp.group(1).strip() if stamp else "", "time": datetime.now(timezone.utc).isoformat(timespec="seconds")})
+    (out / "build.json").write_text(build, encoding="utf-8")
+    (vdir / "build.json").write_text(build, encoding="utf-8")
+    print(f"published under v/{sha}/")
 
 
 if __name__ == "__main__":

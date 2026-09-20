@@ -83,12 +83,12 @@ nav button:focus-visible{outline:2px solid var(--route);outline-offset:-2px}
         <h2>How it stays current</h2>
         <p>Your PC pulls new rides from Bosch every morning and publishes them here. Tap Refresh after a ride day, or just reopen the app.</p>
         <p>The first and last 400 m of every ride are hidden on the map, so your home never appears.</p>
-        <p id="stamp" style="font-size:.8rem;color:var(--muted)">App build 20 Sep 2026 v10</p>
+        <p style="font-size:.8rem;color:var(--muted)"><span id="stamp">App build 20 Sep 2026 v11</span><span id="content"></span></p>
       </div>
     </div>
   </section>
-  <section class="pane" id="pane-dash" role="tabpanel"><iframe id="f-dash" title="Dashboard" data-src="bosch_dashboard.html?embed=1&v=10"></iframe></section>
-  <section class="pane" id="pane-map" role="tabpanel"><iframe id="f-map" title="Ride map" data-src="bosch_ride_map.html?embed=1&v=10"></iframe></section>
+  <section class="pane" id="pane-dash" role="tabpanel"><iframe id="f-dash" title="Dashboard" data-page="bosch_dashboard.html"></iframe></section>
+  <section class="pane" id="pane-map" role="tabpanel"><iframe id="f-map" title="Ride map" data-page="bosch_ride_map.html"></iframe></section>
 </div>
 <nav role="tablist" aria-label="Sections">
   <button data-go="home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
@@ -99,7 +99,32 @@ nav button:focus-visible{outline:2px solid var(--route);outline-offset:-2px}
 <script>
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function dmy(d){ const [y,m,dd]=d.split('-'); return (+dd)+' '+MON[+m-1]+' '+y; }
-function load(id){ const f=document.getElementById(id); if(f&&!f.src) f.src=f.dataset.src; return f; }
+const SHA='__SHA__';                      /* filled in when the site is published */
+const ROOT=location.pathname.replace(/(v\/[^/]+\/)?[^/]*$/,'');   /* the site folder, whether this copy sits at the root or under v/<commit>/ */
+let BASE=ROOT;                             /* where the ride pages are loaded from */
+function pageUrl(f,extra){ return BASE+f.dataset.page+'?embed=1'+(extra||''); }
+function load(id){ const f=document.getElementById(id); if(f&&!f.src) f.src=pageUrl(f); return f; }
+async function exists(u){ try{ const r=await fetch(u,{cache:'no-store'}); return r.ok; }catch(e){ return false; } }
+async function latestSha(){
+  /* GitHub itself is never cached, so ask it first; the site's own note is the fallback, then whatever worked last time */
+  try{ const r=await fetch('https://api.github.com/repos/niccapp0-stack/health-diary/commits/main',{headers:{Accept:'application/vnd.github+json'}}); if(r.ok){ const j=await r.json(); return [String(j.sha).slice(0,10),'GitHub']; } }catch(e){}
+  try{ const r=await fetch(ROOT+'build.json?u='+Date.now(),{cache:'no-store'}); if(r.ok){ return [(await r.json()).sha,'the site']; } }catch(e){}
+  try{ const s=localStorage.getItem('ridebook-sha'); if(s) return [s,'last time']; }catch(e){}
+  return [null,''];
+}
+async function chooseContent(){
+  /* returns false when it has sent the browser to a newer copy of the app */
+  const [sha,via]=await Promise.race([latestSha(),new Promise(r=>setTimeout(()=>r([null,'']),6000))]);
+  const cands=[]; if(sha) cands.push(sha); if(/^[0-9a-f]{7,}$/.test(SHA)&&SHA!==sha) cands.push(SHA);
+  for(const s of cands){
+    if(!(await exists(ROOT+'v/'+s+'/build.json'))) continue;
+    BASE=ROOT+'v/'+s+'/'; try{ localStorage.setItem('ridebook-sha',s); }catch(e){}
+    document.getElementById('content').textContent=' · rides published as '+s.slice(0,7)+(via?', checked with '+via:'');
+    if(s===sha && s!==SHA && !location.pathname.includes('/v/'+s+'/') && await exists(ROOT+'v/'+s+'/app.html')){ location.replace(ROOT+'v/'+s+'/app.html'+location.hash); return false; }
+    return true;
+  }
+  BASE=ROOT; return true;
+}
 function go(where){
   const pane=where==='explore'?'map':where;
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='pane-'+pane));
@@ -111,7 +136,7 @@ function go(where){
 }
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
 async function status(){
-  try{ const r=await fetch('bosch_status.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok) throw 0; const s=await r.json();
+  try{ const r=await fetch(BASE+'bosch_status.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok) throw 0; const s=await r.json();
     document.getElementById('k-rides').textContent=s.rides.toLocaleString('en-AU');
     document.getElementById('k-km').firstChild.textContent=Math.round(s.km).toLocaleString('en-AU');
     document.getElementById('k-last').textContent=dmy(s.lastRide);
@@ -119,7 +144,7 @@ async function status(){
     document.getElementById('upd').textContent='Last checked just now';
   }catch(e){ document.getElementById('sub').textContent='Could not reach the latest data. Showing what is saved on this device.'; }
 }
-document.getElementById('reload').addEventListener('click',async()=>{ document.getElementById('upd').textContent='Checking…'; try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){} await status(); ['f-dash','f-map'].forEach(id=>{ const f=document.getElementById(id); if(f.src){ f.dataset.ready=''; f.src=f.dataset.src+'&t='+Date.now(); } }); await checkBuild(true); });
+document.getElementById('reload').addEventListener('click',async()=>{ document.getElementById('upd').textContent='Checking…'; try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){} if(await chooseContent()===false) return; await status(); ['f-dash','f-map'].forEach(id=>{ const f=document.getElementById(id); if(f.src){ f.dataset.ready=''; f.src=pageUrl(f,'&t='+Date.now()); } }); await checkBuild(true); });
 function setOnline(){ document.getElementById('offline').classList.toggle('on',!navigator.onLine); }
 addEventListener('online',setOnline); addEventListener('offline',setOnline); setOnline();
 let deferred=null;
@@ -128,7 +153,7 @@ document.getElementById('install-btn').addEventListener('click',async()=>{ if(!d
 if(!matchMedia('(display-mode: standalone)').matches && !navigator.standalone) document.getElementById('install').classList.add('on');
 const BUILD=document.getElementById('stamp').textContent.trim();
 async function liveBuild(){
-  const r=await fetch('app.html?u='+Date.now(),{cache:'no-store'}); if(!r.ok) return null;
+  const r=await fetch(ROOT+'app.html?u='+Date.now(),{cache:'no-store'}); if(!r.ok) return null;
   const m=(await r.text()).match(/id="stamp"[^>]*>([^<]+)</); return m?m[1].trim():null;
 }
 async function applyUpdate(live){
@@ -136,24 +161,24 @@ async function applyUpdate(live){
   document.getElementById('upd').textContent='Updating to '+live+'…';
   try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){}
   try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(g=>g.update())); }catch(e){}
-  location.replace('app.html?b='+encodeURIComponent(live.replace(/\W+/g,'-'))+(location.hash||''));
+  location.replace(ROOT+'app.html?b='+encodeURIComponent(live.replace(/\W+/g,'-'))+(location.hash||''));
 }
 async function checkBuild(force){
   try{ const live=await liveBuild();
-    if(!live||live===BUILD){ if(force) document.getElementById('upd').textContent='Latest version, '+BUILD.replace('App build ',''); return; }
+    const num=s=>+((s||'').match(/v(\d+)/)||[0,0])[1];
+    if(!live||num(live)<=num(BUILD)){ if(force) document.getElementById('upd').textContent='Latest version, '+BUILD.replace('App build ',''); return; }
     let last=0; try{ last=+sessionStorage.getItem('ridebook-upd-at')||0; }catch(e){}
     if(!force && Date.now()-last<90000) return; /* tried a moment ago, the site may still be settling; try again shortly */
     try{ sessionStorage.setItem('ridebook-upd-at',String(Date.now())); }catch(e){}
     await applyUpdate(live);
   }catch(e){ if(force) document.getElementById('upd').textContent='Could not check for updates right now.'; }
 }
-checkBuild();
 addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkBuild(); });
 setInterval(()=>{ if(document.visibilityState==='visible') checkBuild(); },5*60*1000);
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
-status();
-const start=(location.hash||'').slice(1); let saved=null; try{ saved=localStorage.getItem('ridebook-tab'); }catch(e){}
-go(['home','dash','map','explore'].includes(start)?start:(saved&&['home','dash','map','explore'].includes(saved)?saved:'home'));
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){ navigator.serviceWorker.register(ROOT+'sw.js',{scope:ROOT}).catch(()=>{}); }
+chooseContent().then(ok=>{ if(ok===false) return; status();
+  const start=(location.hash||'').slice(1); let saved=null; try{ saved=localStorage.getItem('ridebook-tab'); }catch(e){}
+  go(['home','dash','map','explore'].includes(start)?start:(saved&&['home','dash','map','explore'].includes(saved)?saved:'home')); checkBuild(); });
 </script>
 </body>
 </html>
