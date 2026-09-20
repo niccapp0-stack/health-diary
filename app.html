@@ -72,7 +72,7 @@ nav button:focus-visible{outline:2px solid var(--route);outline-offset:-2px}
         <button class="tile" data-go="dash"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg><b>Dashboard</b><span>Fitness trend, habits and effort</span></button>
         <button class="tile" data-go="map"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><b>Map</b><span>Every ride on real streets</span></button>
         <button class="tile" data-go="explore"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><b>Explore</b><span>Where to ride next</span></button>
-        <button class="tile" id="reload"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg><b>Refresh</b><span id="upd">Check for new rides</span></button>
+        <button class="tile" id="reload"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg><b>Refresh</b><span id="upd">Check for new rides and updates</span></button>
       </div>
       <div class="card" id="install">
         <h2>Add to your home screen</h2>
@@ -83,12 +83,12 @@ nav button:focus-visible{outline:2px solid var(--route);outline-offset:-2px}
         <h2>How it stays current</h2>
         <p>Your PC pulls new rides from Bosch every morning and publishes them here. Tap Refresh after a ride day, or just reopen the app.</p>
         <p>The first and last 400 m of every ride are hidden on the map, so your home never appears.</p>
-        <p id="stamp" style="font-size:.8rem;color:var(--muted)">App build 20 Sep 2026 v9</p>
+        <p id="stamp" style="font-size:.8rem;color:var(--muted)">App build 20 Sep 2026 v10</p>
       </div>
     </div>
   </section>
-  <section class="pane" id="pane-dash" role="tabpanel"><iframe id="f-dash" title="Dashboard" data-src="bosch_dashboard.html?embed=1&v=9"></iframe></section>
-  <section class="pane" id="pane-map" role="tabpanel"><iframe id="f-map" title="Ride map" data-src="bosch_ride_map.html?embed=1&v=9"></iframe></section>
+  <section class="pane" id="pane-dash" role="tabpanel"><iframe id="f-dash" title="Dashboard" data-src="bosch_dashboard.html?embed=1&v=10"></iframe></section>
+  <section class="pane" id="pane-map" role="tabpanel"><iframe id="f-map" title="Ride map" data-src="bosch_ride_map.html?embed=1&v=10"></iframe></section>
 </div>
 <nav role="tablist" aria-label="Sections">
   <button data-go="home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
@@ -119,7 +119,7 @@ async function status(){
     document.getElementById('upd').textContent='Last checked just now';
   }catch(e){ document.getElementById('sub').textContent='Could not reach the latest data. Showing what is saved on this device.'; }
 }
-document.getElementById('reload').addEventListener('click',async()=>{ document.getElementById('upd').textContent='Checking…'; try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){} await status(); ['f-dash','f-map'].forEach(id=>{ const f=document.getElementById(id); if(f.src){ f.dataset.ready=''; f.src=f.dataset.src+'&t='+Date.now(); } }); });
+document.getElementById('reload').addEventListener('click',async()=>{ document.getElementById('upd').textContent='Checking…'; try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){} await status(); ['f-dash','f-map'].forEach(id=>{ const f=document.getElementById(id); if(f.src){ f.dataset.ready=''; f.src=f.dataset.src+'&t='+Date.now(); } }); await checkBuild(true); });
 function setOnline(){ document.getElementById('offline').classList.toggle('on',!navigator.onLine); }
 addEventListener('online',setOnline); addEventListener('offline',setOnline); setOnline();
 let deferred=null;
@@ -127,18 +127,29 @@ addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferred=e; cons
 document.getElementById('install-btn').addEventListener('click',async()=>{ if(!deferred) return; deferred.prompt(); await deferred.userChoice; deferred=null; document.getElementById('install').classList.remove('on'); });
 if(!matchMedia('(display-mode: standalone)').matches && !navigator.standalone) document.getElementById('install').classList.add('on');
 const BUILD=document.getElementById('stamp').textContent.trim();
-async function checkBuild(){
-  /* Compare the copy running here with the copy on the website. If the site is newer, throw away every saved copy and reload once. */
-  try{ const r=await fetch('app.html?u='+Date.now(),{cache:'no-store'}); if(!r.ok) return; const m=(await r.text()).match(/id="stamp"[^>]*>([^<]+)</); if(!m) return; const live=m[1].trim(); if(live===BUILD) return;
-    let done=null; try{ done=sessionStorage.getItem('ridebook-upd'); }catch(e){} if(done===live) return;
-    try{ sessionStorage.setItem('ridebook-upd',live); }catch(e){}
-    document.getElementById('upd').textContent='Updating to the new version…';
-    try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){}
-    try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(g=>g.update())); }catch(e){}
-    location.reload();
-  }catch(e){}
+async function liveBuild(){
+  const r=await fetch('app.html?u='+Date.now(),{cache:'no-store'}); if(!r.ok) return null;
+  const m=(await r.text()).match(/id="stamp"[^>]*>([^<]+)</); return m?m[1].trim():null;
 }
-checkBuild(); addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkBuild(); });
+async function applyUpdate(live){
+  /* throw away every saved copy, then open the new build on a fresh address so no cache along the way can hand back the old page */
+  document.getElementById('upd').textContent='Updating to '+live+'…';
+  try{ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }catch(e){}
+  try{ const regs=await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(g=>g.update())); }catch(e){}
+  location.replace('app.html?b='+encodeURIComponent(live.replace(/\W+/g,'-'))+(location.hash||''));
+}
+async function checkBuild(force){
+  try{ const live=await liveBuild();
+    if(!live||live===BUILD){ if(force) document.getElementById('upd').textContent='Latest version, '+BUILD.replace('App build ',''); return; }
+    let last=0; try{ last=+sessionStorage.getItem('ridebook-upd-at')||0; }catch(e){}
+    if(!force && Date.now()-last<90000) return; /* tried a moment ago, the site may still be settling; try again shortly */
+    try{ sessionStorage.setItem('ridebook-upd-at',String(Date.now())); }catch(e){}
+    await applyUpdate(live);
+  }catch(e){ if(force) document.getElementById('upd').textContent='Could not check for updates right now.'; }
+}
+checkBuild();
+addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkBuild(); });
+setInterval(()=>{ if(document.visibilityState==='visible') checkBuild(); },5*60*1000);
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 status();
 const start=(location.hash||'').slice(1); let saved=null; try{ saved=localStorage.getItem('ridebook-tab'); }catch(e){}
