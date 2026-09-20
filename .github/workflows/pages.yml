@@ -26,6 +26,19 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Serve this workflow's output, not the branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The repository's Pages source was "Deploy from a branch", so GitHub's own
+          # build of main ran after every push and overwrote this deployment.
+          code=$(curl -sS -o /tmp/pages.json -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" -d '{"build_type":"workflow"}')
+          echo "Pages source update returned HTTP $code"; cat /tmp/pages.json; echo
+          if [ "$code" != "204" ] && [ "$code" != "200" ]; then
+            echo "::warning::Could not switch the Pages source to GitHub Actions. Set it by hand: Settings, Pages, Build and deployment, Source: GitHub Actions."
+          fi
       - name: Re-render the ride pages with the current templates
         run: python3 site/render.py . _site
       - name: Package the site
@@ -35,3 +48,13 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Confirm the live site serves this commit
+        run: |
+          want="${GITHUB_SHA:0:10}"
+          for i in $(seq 1 24); do
+            live=$(curl -sS -H 'Cache-Control: no-cache' "https://niccapp0-stack.github.io/health-diary/build.json?c=$i" | tr -d '\n' || true)
+            case "$live" in *"$want"*) echo "Live site serves $want"; exit 0;; esac
+            sleep 10
+          done
+          echo "::error::The live site is still not serving $want after four minutes. Something else is overwriting the deployment (the legacy branch build?)."
+          exit 1
